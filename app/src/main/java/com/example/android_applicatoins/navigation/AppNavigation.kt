@@ -9,6 +9,8 @@ import com.example.android_applicatoins.screens.*
 import com.example.android_applicatoins.screens.animation.AnimationScreen
 import com.example.android_applicatoins.screens.basic.BasicScreen
 import com.example.android_applicatoins.screens.basic.EventTestScreen
+import com.example.android_applicatoins.screens.basic.GraphicsDrawingScreen
+import com.example.android_applicatoins.screens.basic.ImageDisplayScreen
 import com.example.android_applicatoins.screens.game.GameScreen
 import com.example.android_applicatoins.screens.native.NativeScreen
 
@@ -36,6 +38,8 @@ sealed class Screen(val route: String) {
     object Flashlight : Screen("flashlight")
     object Compass : Screen("compass")
     object EventTest : Screen("event-test")
+    object GraphicsDrawing : Screen("graphics-drawing")
+    object ImageDisplay : Screen("image-display")
 }
 
 @Composable
@@ -72,6 +76,8 @@ fun AppNavigation(
                         "calendar" -> navController.navigate(Screen.Calendar.route)
                         "gallery" -> navController.navigate(Screen.Gallery.route)
                         "event-test" -> navController.navigate(Screen.EventTest.route)
+                        "graphics-drawing" -> navController.navigate(Screen.GraphicsDrawing.route)
+                        "image-display" -> navController.navigate(Screen.ImageDisplay.route)
                         // TODO: 다른 기본 앱들도 추가
                     }
                 }
@@ -198,6 +204,18 @@ fun AppNavigation(
         
         composable(Screen.EventTest.route) {
             EventTestScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.GraphicsDrawing.route) {
+            GraphicsDrawingScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ImageDisplay.route) {
+            ImageDisplayScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }

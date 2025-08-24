@@ -105,6 +105,20 @@ fun BasicScreen(
             description = "다양한 이벤트 처리를 테스트해보세요",
             icon = Icons.Default.TouchApp,
             route = "event-test"
+        ),
+        AppItem(
+            id = "graphics-drawing",
+            title = "그래픽 그리기",
+            description = "Canvas와 Paint로 그래픽을 그려보세요",
+            icon = Icons.Default.Brush,
+            route = "graphics-drawing"
+        ),
+        AppItem(
+            id = "image-display",
+            title = "이미지 표시",
+            description = "다양한 이미지 표시 방법을 테스트해보세요",
+            icon = Icons.Default.Image,
+            route = "image-display"
         )
     )
     
