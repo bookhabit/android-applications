@@ -98,6 +98,13 @@ fun BasicScreen(
             description = "온라인 쇼핑을 즐기세요",
             icon = Icons.Default.ShoppingCart,
             route = "shop"
+        ),
+        AppItem(
+            id = "event-test",
+            title = "이벤트 테스트",
+            description = "다양한 이벤트 처리를 테스트해보세요",
+            icon = Icons.Default.TouchApp,
+            route = "event-test"
         )
     )
     
