@@ -11,6 +11,7 @@ import com.example.android_applicatoins.screens.basic.BasicScreen
 import com.example.android_applicatoins.screens.basic.EventTestScreen
 import com.example.android_applicatoins.screens.basic.GraphicsDrawingScreen
 import com.example.android_applicatoins.screens.basic.ImageDisplayScreen
+import com.example.android_applicatoins.screens.basic.DialogPopupNotificationScreen
 import com.example.android_applicatoins.screens.game.GameScreen
 import com.example.android_applicatoins.screens.native.NativeScreen
 
@@ -40,6 +41,7 @@ sealed class Screen(val route: String) {
     object EventTest : Screen("event-test")
     object GraphicsDrawing : Screen("graphics-drawing")
     object ImageDisplay : Screen("image-display")
+    object DialogPopupNotification : Screen("dialog-popup-notification")
 }
 
 @Composable
@@ -78,6 +80,7 @@ fun AppNavigation(
                         "event-test" -> navController.navigate(Screen.EventTest.route)
                         "graphics-drawing" -> navController.navigate(Screen.GraphicsDrawing.route)
                         "image-display" -> navController.navigate(Screen.ImageDisplay.route)
+                        "dialog-popup-notification" -> navController.navigate(Screen.DialogPopupNotification.route)
                         // TODO: 다른 기본 앱들도 추가
                     }
                 }
@@ -216,6 +219,12 @@ fun AppNavigation(
         
         composable(Screen.ImageDisplay.route) {
             ImageDisplayScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.DialogPopupNotification.route) {
+            DialogPopupNotificationScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }

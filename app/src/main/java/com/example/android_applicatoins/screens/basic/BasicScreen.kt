@@ -119,6 +119,13 @@ fun BasicScreen(
             description = "다양한 이미지 표시 방법을 테스트해보세요",
             icon = Icons.Default.Image,
             route = "image-display"
+        ),
+        AppItem(
+            id = "dialog-popup-notification",
+            title = "대화상자 & 팝업 & 알림",
+            description = "다양한 대화상자, 팝업, 알림을 테스트해보세요",
+            icon = Icons.Default.Notifications,
+            route = "dialog-popup-notification"
         )
     )
     
