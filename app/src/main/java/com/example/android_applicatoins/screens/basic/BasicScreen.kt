@@ -154,6 +154,13 @@ fun BasicScreen(
             description = "액티비티 생애주기를 테스트해보세요",
             icon = Icons.Default.Refresh,
             route = "lifecycle-test"
+        ),
+        AppItem(
+            id = "permission-test",
+            title = "권한 테스트",
+            description = "안드로이드 권한 시스템을 테스트해보세요",
+            icon = Icons.Default.Security,
+            route = "permission-test"
         )
     )
     
