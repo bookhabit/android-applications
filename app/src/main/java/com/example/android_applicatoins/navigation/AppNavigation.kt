@@ -24,6 +24,7 @@ import com.example.android_applicatoins.screens.basic.MovieInfoScreen
 import com.example.android_applicatoins.screens.basic.CalendarScreen
 import com.example.android_applicatoins.screens.basic.StepCounterScreen
 import com.example.android_applicatoins.screens.basic.GalleryScreen
+import com.example.android_applicatoins.screens.basic.IntentTestScreen
 import com.example.android_applicatoins.screens.basic.listView.AdapterViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.RecyclerViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.SpinnerDemoScreen
@@ -58,6 +59,7 @@ sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object StepCounter : Screen("step-counter")
     object Gallery : Screen("gallery")
+    object IntentTest : Screen("intent-test")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -112,6 +114,7 @@ fun AppNavigation(
                         "step-counter" -> navController.navigate(Screen.StepCounter.route)
                         "gallery" -> navController.navigate(Screen.Gallery.route)
                         "list-view" -> navController.navigate(Screen.ListView.route)
+                        "intent-test" -> navController.navigate(Screen.IntentTest.route)
                     }
                 }
             )
@@ -233,6 +236,12 @@ fun AppNavigation(
         
         composable(Screen.Gallery.route) {
             GalleryScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.IntentTest.route) {
+            IntentTestScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }

@@ -133,6 +133,13 @@ fun BasicScreen(
             description = "이미지들을 그리드 형태로 표시하고 관리하는 앱",
             icon = Icons.Default.PhotoLibrary,
             route = "gallery"
+        ),
+        AppItem(
+            id = "intent-test",
+            title = "인텐트 테스트",
+            description = "액티비티 간 인텐트 전달을 테스트해보세요",
+            icon = Icons.Default.Send,
+            route = "intent-test"
         )
     )
     
