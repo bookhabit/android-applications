@@ -1,4 +1,4 @@
-package com.example.android_applicatoins.screens.basic
+package com.example.android_applicatoins.screens.basic.listView
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

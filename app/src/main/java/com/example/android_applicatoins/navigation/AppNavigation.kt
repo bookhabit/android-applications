@@ -17,12 +17,12 @@ import com.example.android_applicatoins.screens.basic.GraphicsDrawingScreen
 import com.example.android_applicatoins.screens.basic.ImageDisplayScreen
 import com.example.android_applicatoins.screens.basic.DialogPopupNotificationScreen
 import com.example.android_applicatoins.screens.basic.ListViewScreen
-import com.example.android_applicatoins.screens.basic.AdapterViewDemoScreen
-import com.example.android_applicatoins.screens.basic.RecyclerViewDemoScreen
-import com.example.android_applicatoins.screens.basic.SpinnerDemoScreen
-import com.example.android_applicatoins.screens.basic.FragmentDemoScreen
-import com.example.android_applicatoins.screens.basic.ViewPagerDemoScreen
-import com.example.android_applicatoins.screens.basic.ComposeLazyDemoScreen
+import com.example.android_applicatoins.screens.basic.listView.AdapterViewDemoScreen
+import com.example.android_applicatoins.screens.basic.listView.RecyclerViewDemoScreen
+import com.example.android_applicatoins.screens.basic.listView.SpinnerDemoScreen
+import com.example.android_applicatoins.screens.basic.listView.FragmentDemoScreen
+import com.example.android_applicatoins.screens.basic.listView.ViewPagerDemoScreen
+import com.example.android_applicatoins.screens.basic.listView.ComposeLazyDemoScreen
 import com.example.android_applicatoins.screens.game.GameScreen
 import com.example.android_applicatoins.screens.native.NativeScreen
 
