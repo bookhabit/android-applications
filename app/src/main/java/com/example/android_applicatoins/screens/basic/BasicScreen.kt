@@ -84,6 +84,55 @@ fun BasicScreen(
             description = "ListView, RecyclerView, Spinner 등 다양한 리스트 기술을 학습하세요",
             icon = Icons.Default.List,
             route = "list-view"
+        ),
+        AppItem(
+            id = "form-example",
+            title = "폼 예제",
+            description = "다양한 폼 요소들을 사용한 사용자 입력 예제",
+            icon = Icons.Default.Description,
+            route = "form-example"
+        ),
+        AppItem(
+            id = "action-sheet",
+            title = "액션 시트",
+            description = "사용자 선택을 위한 액션 시트 예제",
+            icon = Icons.Default.MoreVert,
+            route = "action-sheet"
+        ),
+        AppItem(
+            id = "modal",
+            title = "모달",
+            description = "다양한 모달 창과 다이얼로그 예제",
+            icon = Icons.Default.OpenInNew,
+            route = "modal"
+        ),
+        AppItem(
+            id = "movie-info",
+            title = "영화 정보",
+            description = "영화 정보를 표시하고 관리하는 앱",
+            icon = Icons.Default.Movie,
+            route = "movie-info"
+        ),
+        AppItem(
+            id = "calendar",
+            title = "캘린더",
+            description = "일정 관리와 날짜 확인을 위한 캘린더 앱",
+            icon = Icons.Default.CalendarToday,
+            route = "calendar"
+        ),
+        AppItem(
+            id = "step-counter",
+            title = "스텝 카운터",
+            description = "걸음 수를 측정하고 건강 정보를 관리하는 앱",
+            icon = Icons.Default.DirectionsWalk,
+            route = "step-counter"
+        ),
+        AppItem(
+            id = "gallery",
+            title = "갤러리",
+            description = "이미지들을 그리드 형태로 표시하고 관리하는 앱",
+            icon = Icons.Default.PhotoLibrary,
+            route = "gallery"
         )
     )
     

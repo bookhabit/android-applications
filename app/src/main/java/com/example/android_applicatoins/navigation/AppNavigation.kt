@@ -17,6 +17,13 @@ import com.example.android_applicatoins.screens.basic.GraphicsDrawingScreen
 import com.example.android_applicatoins.screens.basic.ImageDisplayScreen
 import com.example.android_applicatoins.screens.basic.DialogPopupNotificationScreen
 import com.example.android_applicatoins.screens.basic.ListViewScreen
+import com.example.android_applicatoins.screens.basic.FormExampleScreen
+import com.example.android_applicatoins.screens.basic.ActionSheetScreen
+import com.example.android_applicatoins.screens.basic.ModalScreen
+import com.example.android_applicatoins.screens.basic.MovieInfoScreen
+import com.example.android_applicatoins.screens.basic.CalendarScreen
+import com.example.android_applicatoins.screens.basic.StepCounterScreen
+import com.example.android_applicatoins.screens.basic.GalleryScreen
 import com.example.android_applicatoins.screens.basic.listView.AdapterViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.RecyclerViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.SpinnerDemoScreen
@@ -44,6 +51,13 @@ sealed class Screen(val route: String) {
     object GraphicsDrawing : Screen("graphics-drawing")
     object ImageDisplay : Screen("image-display")
     object DialogPopupNotification : Screen("dialog-popup-notification")
+    object FormExample : Screen("form-example")
+    object ActionSheet : Screen("action-sheet")
+    object Modal : Screen("modal")
+    object MovieInfo : Screen("movie-info")
+    object Calendar : Screen("calendar")
+    object StepCounter : Screen("step-counter")
+    object Gallery : Screen("gallery")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -90,6 +104,13 @@ fun AppNavigation(
                         "graphics-drawing" -> navController.navigate(Screen.GraphicsDrawing.route)
                         "image-display" -> navController.navigate(Screen.ImageDisplay.route)
                         "dialog-popup-notification" -> navController.navigate(Screen.DialogPopupNotification.route)
+                        "form-example" -> navController.navigate(Screen.FormExample.route)
+                        "action-sheet" -> navController.navigate(Screen.ActionSheet.route)
+                        "modal" -> navController.navigate(Screen.Modal.route)
+                        "movie-info" -> navController.navigate(Screen.MovieInfo.route)
+                        "calendar" -> navController.navigate(Screen.Calendar.route)
+                        "step-counter" -> navController.navigate(Screen.StepCounter.route)
+                        "gallery" -> navController.navigate(Screen.Gallery.route)
                         "list-view" -> navController.navigate(Screen.ListView.route)
                     }
                 }
@@ -170,6 +191,48 @@ fun AppNavigation(
         
         composable(Screen.DialogPopupNotification.route) {
             DialogPopupNotificationScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.FormExample.route) {
+            FormExampleScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ActionSheet.route) {
+            ActionSheetScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Modal.route) {
+            ModalScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.MovieInfo.route) {
+            MovieInfoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Calendar.route) {
+            CalendarScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.StepCounter.route) {
+            StepCounterScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Gallery.route) {
+            GalleryScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
