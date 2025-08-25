@@ -51,55 +51,6 @@ fun BasicScreen(
             route = "calculator"
         ),
         AppItem(
-            id = "calendar",
-            title = "달력",
-            description = "일정을 관리하고 날짜를 확인하세요",
-            icon = Icons.Default.CalendarToday,
-            route = "calendar"
-        ),
-        AppItem(
-            id = "gallery",
-            title = "갤러리",
-            description = "사진과 이미지를 관리하세요",
-            icon = Icons.Default.PhotoLibrary,
-            route = "gallery"
-        ),
-        AppItem(
-            id = "form",
-            title = "폼 작성",
-            description = "다양한 폼을 작성하고 관리하세요",
-            icon = Icons.Default.Description,
-            route = "form"
-        ),
-        AppItem(
-            id = "modal",
-            title = "모달",
-            description = "모달 창을 사용한 인터페이스를 확인하세요",
-            icon = Icons.Default.OpenInNew,
-            route = "modal"
-        ),
-        AppItem(
-            id = "action-sheet",
-            title = "액션 시트",
-            description = "액션 시트를 사용한 메뉴를 확인하세요",
-            icon = Icons.Default.MoreVert,
-            route = "action-sheet"
-        ),
-        AppItem(
-            id = "step-counter",
-            title = "걸음 수",
-            description = "일일 걸음 수를 추적하고 기록하세요",
-            icon = Icons.Default.DirectionsWalk,
-            route = "step-counter"
-        ),
-        AppItem(
-            id = "shop",
-            title = "쇼핑",
-            description = "온라인 쇼핑을 즐기세요",
-            icon = Icons.Default.ShoppingCart,
-            route = "shop"
-        ),
-        AppItem(
             id = "event-test",
             title = "이벤트 테스트",
             description = "다양한 이벤트 처리를 테스트해보세요",

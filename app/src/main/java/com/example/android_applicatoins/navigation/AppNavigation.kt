@@ -5,9 +5,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.android_applicatoins.screens.*
+import com.example.android_applicatoins.screens.MainScreen
 import com.example.android_applicatoins.screens.animation.AnimationScreen
 import com.example.android_applicatoins.screens.basic.BasicScreen
+import com.example.android_applicatoins.screens.basic.TodoScreen
+import com.example.android_applicatoins.screens.basic.NotesScreen
+import com.example.android_applicatoins.screens.basic.WeatherScreen
+import com.example.android_applicatoins.screens.basic.CalculatorScreen
 import com.example.android_applicatoins.screens.basic.EventTestScreen
 import com.example.android_applicatoins.screens.basic.GraphicsDrawingScreen
 import com.example.android_applicatoins.screens.basic.ImageDisplayScreen
@@ -31,20 +35,11 @@ sealed class Screen(val route: String) {
     object Animation : Screen("animation")
     object Native : Screen("native")
     
-    // 개별 앱 화면들
+    // 개별 앱 화면들 (독립적으로 접근 가능한 것들만)
     object Todo : Screen("todo")
     object Notes : Screen("notes")
-    object Calculator : Screen("calculator")
-    object TicTacToe : Screen("tictactoe")
     object Weather : Screen("weather")
-    object Calendar : Screen("calendar")
-    object Gallery : Screen("gallery")
-    object Quiz : Screen("quiz")
-    object Memory : Screen("memory")
-    object Snake : Screen("snake")
-    object Stopwatch : Screen("stopwatch")
-    object Flashlight : Screen("flashlight")
-    object Compass : Screen("compass")
+    object Calculator : Screen("calculator")
     object EventTest : Screen("event-test")
     object GraphicsDrawing : Screen("graphics-drawing")
     object ImageDisplay : Screen("image-display")
@@ -91,14 +86,11 @@ fun AppNavigation(
                         "notes" -> navController.navigate(Screen.Notes.route)
                         "weather" -> navController.navigate(Screen.Weather.route)
                         "calculator" -> navController.navigate(Screen.Calculator.route)
-                        "calendar" -> navController.navigate(Screen.Calendar.route)
-                        "gallery" -> navController.navigate(Screen.Gallery.route)
                         "event-test" -> navController.navigate(Screen.EventTest.route)
                         "graphics-drawing" -> navController.navigate(Screen.GraphicsDrawing.route)
                         "image-display" -> navController.navigate(Screen.ImageDisplay.route)
                         "dialog-popup-notification" -> navController.navigate(Screen.DialogPopupNotification.route)
                         "list-view" -> navController.navigate(Screen.ListView.route)
-                        // TODO: 다른 기본 앱들도 추가
                     }
                 }
             )
@@ -109,10 +101,6 @@ fun AppNavigation(
                 onBackPressed = { navController.popBackStack() },
                 onAppSelected = { appId ->
                     when (appId) {
-                        "tictactoe" -> navController.navigate(Screen.TicTacToe.route)
-                        "memory" -> navController.navigate(Screen.Memory.route)
-                        "snake" -> navController.navigate(Screen.Snake.route)
-                        "quiz" -> navController.navigate(Screen.Quiz.route)
                         // TODO: 다른 게임들도 추가
                     }
                 }
@@ -132,12 +120,7 @@ fun AppNavigation(
             NativeScreen(
                 onBackPressed = { navController.popBackStack() },
                 onAppSelected = { appId ->
-                    when (appId) {
-                        "stopwatch" -> navController.navigate(Screen.Stopwatch.route)
-                        "flashlight" -> navController.navigate(Screen.Flashlight.route)
-                        "compass" -> navController.navigate(Screen.Compass.route)
-                        // TODO: 다른 네이티브 앱들도 추가
-                    }
+                    // TODO: 네이티브 앱들 구현 후 추가
                 }
             )
         }
@@ -155,69 +138,14 @@ fun AppNavigation(
             )
         }
         
-        composable(Screen.Calculator.route) {
-            CalculatorScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.TicTacToe.route) {
-            TicTacToeScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
         composable(Screen.Weather.route) {
             WeatherScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
         
-        composable(Screen.Stopwatch.route) {
-            StopwatchScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        // 플레이스홀더 화면들
-        composable(Screen.Calendar.route) {
-            CalendarScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.Gallery.route) {
-            GalleryScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.Quiz.route) {
-            QuizScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.Memory.route) {
-            MemoryScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.Snake.route) {
-            SnakeScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.Flashlight.route) {
-            FlashlightScreen(
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
-        
-        composable(Screen.Compass.route) {
-            CompassScreen(
+        composable(Screen.Calculator.route) {
+            CalculatorScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
