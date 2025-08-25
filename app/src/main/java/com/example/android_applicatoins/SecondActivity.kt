@@ -1,6 +1,7 @@
 package com.example.android_applicatoins
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import android.content.Intent
@@ -30,8 +31,12 @@ import androidx.compose.ui.unit.dp
 import com.example.android_applicatoins.ui.theme.AndroidapplicatoinsTheme
 
 class SecondActivity : ComponentActivity() {
+    
+    private val TAG = "SecondActivity_Lifecycle"
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate() 호출됨")
         setContent {
             AndroidapplicatoinsTheme {
                 Surface(
@@ -56,6 +61,36 @@ class SecondActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart() 호출됨")
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume() 호출됨")
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause() 호출됨")
+    }
+    
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop() 호출됨")
+    }
+    
+    override fun onRestart() {
+        super.onRestart()
+        Log.d(TAG, "onRestart() 호출됨")
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy() 호출됨")
     }
 }
 

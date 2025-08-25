@@ -147,6 +147,13 @@ fun BasicScreen(
             description = "다양한 암시적 인텐트를 테스트해보세요",
             icon = Icons.Default.Language,
             route = "implicit-intent-test"
+        ),
+        AppItem(
+            id = "lifecycle-test",
+            title = "생애주기 테스트",
+            description = "액티비티 생애주기를 테스트해보세요",
+            icon = Icons.Default.Refresh,
+            route = "lifecycle-test"
         )
     )
     
