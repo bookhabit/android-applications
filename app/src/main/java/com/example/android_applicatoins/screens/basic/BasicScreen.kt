@@ -126,6 +126,13 @@ fun BasicScreen(
             description = "다양한 대화상자, 팝업, 알림을 테스트해보세요",
             icon = Icons.Default.Notifications,
             route = "dialog-popup-notification"
+        ),
+        AppItem(
+            id = "list-view",
+            title = "리스트 뷰",
+            description = "ListView, RecyclerView, Spinner 등 다양한 리스트 기술을 학습하세요",
+            icon = Icons.Default.List,
+            route = "list-view"
         )
     )
     

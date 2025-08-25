@@ -12,6 +12,13 @@ import com.example.android_applicatoins.screens.basic.EventTestScreen
 import com.example.android_applicatoins.screens.basic.GraphicsDrawingScreen
 import com.example.android_applicatoins.screens.basic.ImageDisplayScreen
 import com.example.android_applicatoins.screens.basic.DialogPopupNotificationScreen
+import com.example.android_applicatoins.screens.basic.ListViewScreen
+import com.example.android_applicatoins.screens.basic.AdapterViewDemoScreen
+import com.example.android_applicatoins.screens.basic.RecyclerViewDemoScreen
+import com.example.android_applicatoins.screens.basic.SpinnerDemoScreen
+import com.example.android_applicatoins.screens.basic.FragmentDemoScreen
+import com.example.android_applicatoins.screens.basic.ViewPagerDemoScreen
+import com.example.android_applicatoins.screens.basic.ComposeLazyDemoScreen
 import com.example.android_applicatoins.screens.game.GameScreen
 import com.example.android_applicatoins.screens.native.NativeScreen
 
@@ -42,6 +49,15 @@ sealed class Screen(val route: String) {
     object GraphicsDrawing : Screen("graphics-drawing")
     object ImageDisplay : Screen("image-display")
     object DialogPopupNotification : Screen("dialog-popup-notification")
+    
+    // 리스트 뷰 관련 스크린들
+    object ListView : Screen("list-view")
+    object AdapterViewDemo : Screen("adapter-view-demo")
+    object RecyclerViewDemo : Screen("recycler-view-demo")
+    object SpinnerDemo : Screen("spinner-demo")
+    object FragmentDemo : Screen("fragment-demo")
+    object ViewPagerDemo : Screen("view-pager-demo")
+    object ComposeLazyDemo : Screen("compose-lazy-demo")
 }
 
 @Composable
@@ -81,6 +97,7 @@ fun AppNavigation(
                         "graphics-drawing" -> navController.navigate(Screen.GraphicsDrawing.route)
                         "image-display" -> navController.navigate(Screen.ImageDisplay.route)
                         "dialog-popup-notification" -> navController.navigate(Screen.DialogPopupNotification.route)
+                        "list-view" -> navController.navigate(Screen.ListView.route)
                         // TODO: 다른 기본 앱들도 추가
                     }
                 }
@@ -225,6 +242,59 @@ fun AppNavigation(
         
         composable(Screen.DialogPopupNotification.route) {
             DialogPopupNotificationScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        // 리스트 뷰 관련 스크린들
+        composable(Screen.ListView.route) {
+            ListViewScreen(
+                onBackPressed = { navController.popBackStack() },
+                onAppSelected = { appId ->
+                    when (appId) {
+                        "adapter-view-demo" -> navController.navigate(Screen.AdapterViewDemo.route)
+                        "recycler-view-demo" -> navController.navigate(Screen.RecyclerViewDemo.route)
+                        "spinner-demo" -> navController.navigate(Screen.SpinnerDemo.route)
+                        "fragment-demo" -> navController.navigate(Screen.FragmentDemo.route)
+                        "view-pager-demo" -> navController.navigate(Screen.ViewPagerDemo.route)
+                        "compose-lazy-demo" -> navController.navigate(Screen.ComposeLazyDemo.route)
+                    }
+                }
+            )
+        }
+        
+        composable(Screen.AdapterViewDemo.route) {
+            AdapterViewDemoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.RecyclerViewDemo.route) {
+            RecyclerViewDemoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.SpinnerDemo.route) {
+            SpinnerDemoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.FragmentDemo.route) {
+            FragmentDemoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ViewPagerDemo.route) {
+            ViewPagerDemoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ComposeLazyDemo.route) {
+            ComposeLazyDemoScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
