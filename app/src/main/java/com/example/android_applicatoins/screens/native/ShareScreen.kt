@@ -32,11 +32,102 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
+
+// 저장 유틸 함수들
+fun saveTextToDownloads(context: Context, text: String, onResult: (Boolean, String) -> Unit) {
+    try {
+        val filename = "shared_text_${System.currentTimeMillis()}.txt"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, filename)
+            put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+        }
+
+        val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+        uri?.let {
+            context.contentResolver.openOutputStream(it)?.use { stream ->
+                stream.write(text.toByteArray())
+                onResult(true, "텍스트가 다운로드 폴더에 저장됨 ✅")
+                return
+            }
+        }
+        onResult(false, "텍스트 저장 실패")
+    } catch (e: Exception) {
+        onResult(false, "저장 실패: ${e.message}")
+    }
+}
+
+fun saveImageToGallery(context: Context, bitmap: Bitmap, onResult: (Boolean, String) -> Unit) {
+    try {
+        val filename = "shared_image_${System.currentTimeMillis()}.jpg"
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+        }
+
+        val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+        uri?.let {
+            context.contentResolver.openOutputStream(it)?.use { stream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                onResult(true, "이미지가 갤러리에 저장됨 ✅")
+                return
+            }
+        }
+        onResult(false, "이미지 저장 실패")
+    } catch (e: Exception) {
+        onResult(false, "저장 실패: ${e.message}")
+    }
+}
+
+// 권한 체크 함수
+fun checkStoragePermission(context: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // Android 13 이상: READ_MEDIA_IMAGES 권한 체크
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_MEDIA_IMAGES
+        ) == PackageManager.PERMISSION_GRANTED
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // Android 10 이상: Scoped Storage로 권한 불필요
+        true
+    } else {
+        // Android 9 이하: WRITE_EXTERNAL_STORAGE 권한 체크
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+// 권한 요청 함수
+fun requestStoragePermission(activity: android.app.Activity) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // Android 13 이상: READ_MEDIA_IMAGES 권한 요청
+        ActivityCompat.requestPermissions(
+            activity,
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES),
+            1001
+        )
+    } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        // Android 9 이하: WRITE_EXTERNAL_STORAGE 권한 요청
+        ActivityCompat.requestPermissions(
+            activity,
+            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+            1002
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -208,6 +299,10 @@ fun ExternalToInternalTab(
     onReceiveImage: () -> Unit,
     onSaveToGallery: () -> Unit
 ) {
+    val context = LocalContext.current
+    var saveResult by remember { mutableStateOf("") }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -220,7 +315,7 @@ fun ExternalToInternalTab(
         )
         
         Text(
-            text = "카톡, 외부 앱에서 공유받은 데이터를 앱에서 표시",
+            text = "카톡, 외부 앱에서 공유받은 데이터를 앱에서 표시하고 공용 폴더에 저장",
             fontSize = 14.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
@@ -228,7 +323,7 @@ fun ExternalToInternalTab(
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // 텍스트 받기
+        // 텍스트 받기 + 저장
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
@@ -266,13 +361,33 @@ fun ExternalToInternalTab(
                             fontSize = 14.sp
                         )
                     }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Button(
+                        onClick = {
+                            if (checkStoragePermission(context)) {
+                                saveTextToDownloads(context, receivedText) { success, msg ->
+                                    saveResult = msg
+                                }
+                            } else {
+                                showPermissionDialog = true
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Save, "텍스트 저장", modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("다운로드 폴더에 저장")
+                    }
                 }
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 이미지 받기
+        // 이미지 받기 + 저장
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E8))
@@ -318,7 +433,15 @@ fun ExternalToInternalTab(
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Button(
-                        onClick = onSaveToGallery,
+                        onClick = {
+                            if (checkStoragePermission(context)) {
+                                saveImageToGallery(context, receivedImageBitmap) { success, msg ->
+                                    saveResult = msg
+                                }
+                            } else {
+                                showPermissionDialog = true
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -328,6 +451,90 @@ fun ExternalToInternalTab(
                     }
                 }
             }
+        }
+        
+        // 저장 결과 표시
+        if (saveResult.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (saveResult.contains("✅")) Color(0xFFE8F5E8) else Color(0xFFFFEBEE)
+                )
+            ) {
+                Text(
+                    text = saveResult,
+                    modifier = Modifier.padding(16.dp),
+                    color = if (saveResult.contains("✅")) Color(0xFF2E7D32) else Color(0xFFD32F2F),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+        
+        // 권한 안내 다이얼로그
+        if (showPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = { showPermissionDialog = false },
+                title = {
+                    Text(
+                        "저장소 권한 필요",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "파일을 공용 폴더에 저장하려면 저장소 권한이 필요합니다.",
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "권한 설정 방법:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            Text(
+                                text = "설정 > 앱 > 동기부여 앱 > 권한 > 사진 및 동영상",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        } else {
+                            Text(
+                                text = "설정 > 앱 > 동기부여 앱 > 권한 > 저장소",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showPermissionDialog = false
+                            try {
+                                val activity = context as? android.app.Activity
+                                activity?.let { requestStoragePermission(it) }
+                            } catch (e: Exception) {
+                                // 권한 요청 실패 처리
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    ) {
+                        Text("권한 요청")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showPermissionDialog = false }
+                    ) {
+                        Text("취소")
+                    }
+                }
+            )
         }
     }
 }
