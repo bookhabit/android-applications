@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +41,24 @@ fun ScreenStateMonitorScreen(
     var todayUsageTime by remember { mutableStateOf(0L) }
     var screenStateHistory by remember { mutableStateOf(listOf<String>()) }
     var lastScreenChange by remember { mutableStateOf("") }
+    var autoYouTubeEnabled by remember { mutableStateOf(true) }
+
+    // 유튜브 링크 실행 함수
+    fun openYouTubeLink() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/shorts/MurVXaWHh8U"))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            
+            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+            val change = "자동 유튜브 실행 - $timestamp"
+            screenStateHistory = screenStateHistory.take(5).toMutableList().apply { add(0, change) }
+        } catch (e: Exception) {
+            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+            val change = "유튜브 실행 실패 - $timestamp"
+            screenStateHistory = screenStateHistory.take(5).toMutableList().apply { add(0, change) }
+        }
+    }
 
     val screenReceiver = remember {
         object : BroadcastReceiver() {
@@ -50,6 +72,11 @@ fun ScreenStateMonitorScreen(
                         val change = "화면 켜짐 - $timestamp"
                         lastScreenChange = change
                         screenStateHistory = screenStateHistory.take(5).toMutableList().apply { add(0, change) }
+                        
+                        // 화면을 켤 때마다 유튜브 자동 실행 (개발모드)
+                        if (autoYouTubeEnabled) {
+                            openYouTubeLink()
+                        }
                         
                         // 화면이 꺼져있던 시간 계산
                         if (screenOffTime > 0) {
@@ -130,12 +157,65 @@ fun ScreenStateMonitorScreen(
     fun simulateScreenToggle() {
         if (isScreenOn) {
             // 화면 끄기 시뮬레이션
-            val intent = Intent(Intent.ACTION_SCREEN_OFF)
-            context.sendBroadcast(intent)
+            isScreenOn = false
+            screenOffTime = System.currentTimeMillis()
+            
+            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+            val change = "화면 꺼짐 (시뮬레이션) - $timestamp"
+            lastScreenChange = change
+            screenStateHistory = screenStateHistory.take(5).toMutableList().apply { add(0, change) }
+            
+            // 화면이 켜져있던 시간 계산
+            if (screenOnTime > 0) {
+                val onDuration = screenOffTime - screenOnTime
+                totalUsageTime += onDuration
+                todayUsageTime += onDuration
+            }
+            
+            // 3초 후 자동으로 화면 켜기
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(3000) // 3초 대기
+                isScreenOn = true
+                screenOnTime = System.currentTimeMillis()
+                
+                val timestamp2 = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                val change2 = "화면 켜짐 (시뮬레이션) - $timestamp2"
+                lastScreenChange = change2
+                screenStateHistory = screenStateHistory.take(5).toMutableList().apply { add(0, change2) }
+                
+                // 화면이 꺼져있던 시간 계산
+                if (screenOffTime > 0) {
+                    val offDuration = screenOnTime - screenOffTime
+                    totalUsageTime += offDuration
+                    todayUsageTime += offDuration
+                }
+                
+                // 화면을 켤 때마다 유튜브 자동 실행 (개발모드)
+                if (autoYouTubeEnabled) {
+                    openYouTubeLink()
+                }
+            }
         } else {
-            // 화면 켜기 시뮬레이션
-            val intent = Intent(Intent.ACTION_SCREEN_ON)
-            context.sendBroadcast(intent)
+            // 이미 꺼져있다면 즉시 켜기
+            isScreenOn = true
+            screenOnTime = System.currentTimeMillis()
+            
+            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+            val change = "화면 켜짐 (시뮬레이션) - $timestamp"
+            lastScreenChange = change
+            screenStateHistory = screenStateHistory.take(5).toMutableList().apply { add(0, change) }
+            
+            // 화면이 꺼져있던 시간 계산
+            if (screenOffTime > 0) {
+                val offDuration = screenOnTime - screenOffTime
+                totalUsageTime += offDuration
+                todayUsageTime += offDuration
+            }
+            
+            // 화면을 켤 때마다 유튜브 자동 실행 (개발모드)
+            if (autoYouTubeEnabled) {
+                openYouTubeLink()
+            }
         }
     }
 
@@ -302,7 +382,7 @@ fun ScreenStateMonitorScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("화면 토글")
+                    Text("화면 시뮬레이션")
                 }
                 
                 Button(
@@ -319,6 +399,49 @@ fun ScreenStateMonitorScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("초기화")
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // 자동 유튜브 실행 토글
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFFF8E1)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "자동 유튜브 실행",
+                        tint = Color(0xFFFF9800)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "자동 유튜브 실행 (개발모드)",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFF9800)
+                        )
+                        Text(
+                            text = "화면을 켤 때마다 유튜브 링크 자동 실행",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = autoYouTubeEnabled,
+                        onCheckedChange = { autoYouTubeEnabled = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFFFF9800),
+                            checkedTrackColor = Color(0xFFFF9800).copy(alpha = 0.5f)
+                        )
+                    )
                 }
             }
             
