@@ -64,6 +64,11 @@ class MotivationDataStore(context: Context) {
         get() = sharedPreferences.getString("end_time", "07:00") ?: "07:00"
         set(value) = sharedPreferences.edit().putString("end_time", value).apply()
 
+    // SNS 앱 차단 설정
+    var snsBlockingEnabled: Boolean
+        get() = sharedPreferences.getBoolean("sns_blocking_enabled", false)
+        set(value) = sharedPreferences.edit().putBoolean("sns_blocking_enabled", value).apply()
+
     // 모든 데이터 초기화
     fun clearAllData() {
         sharedPreferences.edit().clear().apply()
@@ -85,7 +90,8 @@ class MotivationDataStore(context: Context) {
                    "today_goal": "$todayGoal",
                    "auto_motivation_enabled": $autoMotivationEnabled,
                    "start_time": "$startTime",
-                   "end_time": "$endTime"
+                   "end_time": "$endTime",
+                   "sns_blocking_enabled": $snsBlockingEnabled
                }
                """.trimIndent()
            }

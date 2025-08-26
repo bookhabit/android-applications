@@ -1,5 +1,6 @@
 package com.example.android_applicatoins.screens.native
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -63,6 +64,10 @@ fun MotivationScreen(
     var autoMotivationEnabled by remember { mutableStateOf(dataStore.autoMotivationEnabled) }
     var startTime by remember { mutableStateOf(dataStore.startTime) }
     var endTime by remember { mutableStateOf(dataStore.endTime) }
+    var snsBlockingEnabled by remember { mutableStateOf(dataStore.snsBlockingEnabled) }
+    
+    // 접근성 서비스 권한 확인 다이얼로그
+    var showAccessibilityPermissionDialog by remember { mutableStateOf(false) }
     
          // 데이터 저장 함수들
      fun saveMotivationData() {
@@ -85,6 +90,19 @@ fun MotivationScreen(
         dataStore.autoMotivationEnabled = autoMotivationEnabled
         dataStore.startTime = startTime
         dataStore.endTime = endTime
+        dataStore.snsBlockingEnabled = snsBlockingEnabled
+    }
+    
+    // 접근성 서비스 권한 확인
+    fun checkAccessibilityPermission(): Boolean {
+        val accessibilityEnabled = try {
+            val accessibilityManager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+            val enabledServices = accessibilityManager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_GENERIC)
+            enabledServices.any { it.resolveInfo.serviceInfo.packageName == context.packageName }
+        } catch (e: Exception) {
+            false
+        }
+        return accessibilityEnabled
     }
     
     // 화면 상태 감지
@@ -136,6 +154,14 @@ fun MotivationScreen(
         
         onDispose {
             context.unregisterReceiver(screenReceiver)
+        }
+    }
+    
+    // 앱 시작 시 접근성 서비스 상태 확인 및 SNS 차단 기능 동기화
+    LaunchedEffect(Unit) {
+        if (snsBlockingEnabled && checkAccessibilityPermission()) {
+            // 접근성 서비스가 활성화되어 있고 SNS 차단이 켜져 있으면 서비스 상태 동기화
+            com.example.android_applicatoins.services.AppBlockingService.setBlockingEnabled(true)
         }
     }
 
@@ -305,6 +331,55 @@ fun MotivationScreen(
             }
         )
     }
+    
+    // 접근성 서비스 권한 안내 다이얼로그
+    if (showAccessibilityPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showAccessibilityPermissionDialog = false },
+            title = {
+                Text(
+                    "접근성 서비스 권한 필요",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "SNS 앱 차단 기능을 사용하려면 접근성 서비스 권한이 필요합니다.",
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "설정 방법:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "1. 설정 앱 열기\n2. 접근성 선택\n3. '동기부여 앱' 찾기\n4. 토글 활성화",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showAccessibilityPermissionDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                ) {
+                    Text("확인")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showAccessibilityPermissionDialog = false }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -423,6 +498,18 @@ fun MotivationScreen(
                     onEndTimeChange = { 
                         endTime = it
                         saveSettingsData()
+                    },
+                    snsBlockingEnabled = snsBlockingEnabled,
+                    onSnsBlockingChange = { 
+                        if (it && !checkAccessibilityPermission()) {
+                            // 접근성 권한이 없으면 다이얼로그 표시
+                            showAccessibilityPermissionDialog = true
+                        } else {
+                            snsBlockingEnabled = it
+                            saveSettingsData()
+                            // SNS 차단 서비스 상태 업데이트
+                            com.example.android_applicatoins.services.AppBlockingService.setBlockingEnabled(it)
+                        }
                     }
                 )
             }
@@ -741,7 +828,9 @@ fun SettingsTab(
     startTime: String,
     onStartTimeChange: (String) -> Unit,
     endTime: String,
-    onEndTimeChange: (String) -> Unit
+    onEndTimeChange: (String) -> Unit,
+    snsBlockingEnabled: Boolean,
+    onSnsBlockingChange: (Boolean) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -851,6 +940,72 @@ fun SettingsTab(
                     text = "설정된 시간대에만 동기부여가 실행됩니다",
                     fontSize = 12.sp,
                     color = Color.Gray
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // SNS 앱 차단 토글
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Block,
+                    contentDescription = "SNS 앱 차단",
+                    tint = Color(0xFFE91E63)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "SNS 앱 실행 차단",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFE91E63)
+                    )
+                    Text(
+                        text = "YouTube, Facebook, Instagram 등 SNS 앱 실행을 차단하여 집중력을 향상시킵니다",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+                Switch(
+                    checked = snsBlockingEnabled,
+                    onCheckedChange = onSnsBlockingChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color(0xFFE91E63),
+                        checkedTrackColor = Color(0xFFE91E63).copy(alpha = 0.5f)
+                    )
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // SNS 차단 설정 안내
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "⚠️ SNS 차단 기능 사용 안내",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1976D2)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "• 이 기능을 사용하려면 접근성 서비스 권한이 필요합니다\n• 설정 > 접근성에서 '동기부여 앱'을 활성화해주세요\n• 토글 OFF 시 서비스가 자동으로 중지됩니다",
+                    fontSize = 12.sp,
+                    color = Color(0xFF1976D2)
                 )
             }
         }
