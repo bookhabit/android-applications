@@ -98,6 +98,13 @@ fun NativeScreen(
             description = "방향을 확인하고 길을 찾으세요",
             icon = Icons.Default.Explore,
             route = "compass"
+        ),
+        AppItem(
+            id = "music-player",
+            title = "음악 플레이어",
+            description = "안드로이드 서비스를 사용한 음악 재생 앱",
+            icon = Icons.Default.MusicNote,
+            route = "music-player"
         )
     )
     

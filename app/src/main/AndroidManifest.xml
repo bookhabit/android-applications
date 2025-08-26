@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     
     <!-- 런타임 권한들 -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -60,6 +62,11 @@
             android:exported="false"
             android:label="두 번째 액티비티"
             android:theme="@style/Theme.Androidapplicatoins" />
+            
+        <service
+            android:name=".services.MusicService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
     </application>
 
 </manifest>

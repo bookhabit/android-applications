@@ -36,6 +36,7 @@ import com.example.android_applicatoins.screens.basic.listView.ViewPagerDemoScre
 import com.example.android_applicatoins.screens.basic.listView.ComposeLazyDemoScreen
 import com.example.android_applicatoins.screens.game.GameScreen
 import com.example.android_applicatoins.screens.native.NativeScreen
+import com.example.android_applicatoins.screens.native.MusicPlayerScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -66,6 +67,9 @@ sealed class Screen(val route: String) {
     object ImplicitIntentTest : Screen("implicit-intent-test")
     object LifecycleTest : Screen("lifecycle-test")
     object PermissionTest : Screen("permission-test")
+    
+    // 네이티브 앱 화면들
+    object MusicPlayer : Screen("music-player")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -153,7 +157,9 @@ fun AppNavigation(
             NativeScreen(
                 onBackPressed = { navController.popBackStack() },
                 onAppSelected = { appId ->
-                    // TODO: 네이티브 앱들 구현 후 추가
+                    when (appId) {
+                        "music-player" -> navController.navigate(Screen.MusicPlayer.route)
+                    }
                 }
             )
         }
@@ -322,6 +328,12 @@ fun AppNavigation(
         
         composable(Screen.ComposeLazyDemo.route) {
             ComposeLazyDemoScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.MusicPlayer.route) {
+            MusicPlayerScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
