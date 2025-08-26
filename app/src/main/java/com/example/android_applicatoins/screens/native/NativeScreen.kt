@@ -6,6 +6,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -131,7 +134,7 @@ fun NativeScreen(
             id = "sms-receiver",
             title = "SMS 수신 알림",
             description = "SMS 수신을 감지하고 알림 표시",
-            icon = Icons.Default.Message,
+            icon = Icons.AutoMirrored.Filled.Message,
             route = "sms-receiver"
         ),
         AppItem(
@@ -159,7 +162,7 @@ fun NativeScreen(
             id = "intent-test",
             title = "인텐트 테스트",
             description = "액티비티 간 인텐트 전달을 테스트해보세요",
-            icon = Icons.Default.Send,
+            icon = Icons.AutoMirrored.Filled.Send,
             route = "intent-test"
         ),
         AppItem(
@@ -191,7 +194,7 @@ fun NativeScreen(
                 title = { Text("네이티브") },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.Default.ArrowBack, "뒤로가기")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "뒤로가기")
                     }
                 }
             )
