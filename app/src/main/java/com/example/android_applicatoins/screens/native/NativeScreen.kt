@@ -154,6 +154,34 @@ fun NativeScreen(
             description = "Content Provider를 이용한 파일 및 이미지 다운로드",
             icon = Icons.Default.Download,
             route = "file-download-app"
+        ),
+        AppItem(
+            id = "intent-test",
+            title = "인텐트 테스트",
+            description = "액티비티 간 인텐트 전달을 테스트해보세요",
+            icon = Icons.Default.Send,
+            route = "intent-test"
+        ),
+        AppItem(
+            id = "implicit-intent-test",
+            title = "암시적 인텐트 테스트",
+            description = "다양한 암시적 인텐트를 테스트해보세요",
+            icon = Icons.Default.Language,
+            route = "implicit-intent-test"
+        ),
+        AppItem(
+            id = "lifecycle-test",
+            title = "생애주기 테스트",
+            description = "액티비티 생애주기를 테스트해보세요",
+            icon = Icons.Default.Refresh,
+            route = "lifecycle-test"
+        ),
+        AppItem(
+            id = "permission-test",
+            title = "권한 테스트",
+            description = "안드로이드 권한 시스템을 테스트해보세요",
+            icon = Icons.Default.Security,
+            route = "permission-test"
         )
     )
     

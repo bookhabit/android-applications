@@ -1,4 +1,4 @@
-package com.example.android_applicatoins.screens.basic
+package com.example.android_applicatoins.screens.native
 
 import android.content.Intent
 import androidx.compose.foundation.layout.*

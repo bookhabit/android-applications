@@ -24,10 +24,6 @@ import com.example.android_applicatoins.screens.basic.MovieInfoScreen
 import com.example.android_applicatoins.screens.basic.CalendarScreen
 import com.example.android_applicatoins.screens.basic.StepCounterScreen
 import com.example.android_applicatoins.screens.basic.GalleryScreen
-import com.example.android_applicatoins.screens.basic.IntentTestScreen
-import com.example.android_applicatoins.screens.basic.ImplicitIntentTestScreen
-import com.example.android_applicatoins.screens.basic.LifecycleTestScreen
-import com.example.android_applicatoins.screens.basic.PermissionTestScreen
 import com.example.android_applicatoins.screens.basic.listView.AdapterViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.RecyclerViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.SpinnerDemoScreen
@@ -44,6 +40,10 @@ import com.example.android_applicatoins.screens.native.SmsReceiverScreen
 import com.example.android_applicatoins.screens.native.ScreenStateMonitorScreen
 import com.example.android_applicatoins.screens.native.ContactsAppScreen
 import com.example.android_applicatoins.screens.native.FileDownloadAppScreen
+import com.example.android_applicatoins.screens.native.IntentTestScreen
+import com.example.android_applicatoins.screens.native.ImplicitIntentTestScreen
+import com.example.android_applicatoins.screens.native.LifecycleTestScreen
+import com.example.android_applicatoins.screens.native.PermissionTestScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -70,10 +70,6 @@ sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object StepCounter : Screen("step-counter")
     object Gallery : Screen("gallery")
-    object IntentTest : Screen("intent-test")
-    object ImplicitIntentTest : Screen("implicit-intent-test")
-    object LifecycleTest : Screen("lifecycle-test")
-    object PermissionTest : Screen("permission-test")
     
     // 네이티브 앱 화면들
     object MusicPlayer : Screen("music-player")
@@ -84,6 +80,10 @@ sealed class Screen(val route: String) {
     object ScreenStateMonitor : Screen("screen-monitor")
     object ContactsApp : Screen("contacts-app")
     object FileDownloadApp : Screen("file-download-app")
+    object IntentTest : Screen("intent-test")
+    object ImplicitIntentTest : Screen("implicit-intent-test")
+    object LifecycleTest : Screen("lifecycle-test")
+    object PermissionTest : Screen("permission-test")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -138,10 +138,6 @@ fun AppNavigation(
                         "step-counter" -> navController.navigate(Screen.StepCounter.route)
                         "gallery" -> navController.navigate(Screen.Gallery.route)
                         "list-view" -> navController.navigate(Screen.ListView.route)
-                        "intent-test" -> navController.navigate(Screen.IntentTest.route)
-                        "implicit-intent-test" -> navController.navigate(Screen.ImplicitIntentTest.route)
-                        "lifecycle-test" -> navController.navigate(Screen.LifecycleTest.route)
-                        "permission-test" -> navController.navigate(Screen.PermissionTest.route)
                     }
                 }
             )
@@ -180,6 +176,10 @@ fun AppNavigation(
                         "screen-monitor" -> navController.navigate(Screen.ScreenStateMonitor.route)
                         "contacts-app" -> navController.navigate(Screen.ContactsApp.route)
                         "file-download-app" -> navController.navigate(Screen.FileDownloadApp.route)
+                        "intent-test" -> navController.navigate(Screen.IntentTest.route)
+                        "implicit-intent-test" -> navController.navigate(Screen.ImplicitIntentTest.route)
+                        "lifecycle-test" -> navController.navigate(Screen.LifecycleTest.route)
+                        "permission-test" -> navController.navigate(Screen.PermissionTest.route)
                     }
                 }
             )
