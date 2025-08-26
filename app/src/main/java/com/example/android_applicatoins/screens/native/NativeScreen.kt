@@ -140,6 +140,20 @@ fun NativeScreen(
             description = "화면 ON/OFF 상태를 감지하고 사용 시간 추적",
             icon = Icons.Default.Visibility,
             route = "screen-monitor"
+        ),
+        AppItem(
+            id = "contacts-app",
+            title = "연락처 앱",
+            description = "Content Provider를 이용한 연락처 읽기/쓰기",
+            icon = Icons.Default.Person,
+            route = "contacts-app"
+        ),
+        AppItem(
+            id = "file-download-app",
+            title = "파일 다운로드 앱",
+            description = "Content Provider를 이용한 파일 및 이미지 다운로드",
+            icon = Icons.Default.Download,
+            route = "file-download-app"
         )
     )
     

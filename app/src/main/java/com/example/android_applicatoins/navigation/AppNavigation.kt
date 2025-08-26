@@ -42,6 +42,8 @@ import com.example.android_applicatoins.screens.native.NetworkMonitorScreen
 import com.example.android_applicatoins.screens.native.BootReceiverScreen
 import com.example.android_applicatoins.screens.native.SmsReceiverScreen
 import com.example.android_applicatoins.screens.native.ScreenStateMonitorScreen
+import com.example.android_applicatoins.screens.native.ContactsAppScreen
+import com.example.android_applicatoins.screens.native.FileDownloadAppScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -80,6 +82,8 @@ sealed class Screen(val route: String) {
     object BootReceiver : Screen("boot-receiver")
     object SmsReceiver : Screen("sms-receiver")
     object ScreenStateMonitor : Screen("screen-monitor")
+    object ContactsApp : Screen("contacts-app")
+    object FileDownloadApp : Screen("file-download-app")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -174,6 +178,8 @@ fun AppNavigation(
                         "boot-receiver" -> navController.navigate(Screen.BootReceiver.route)
                         "sms-receiver" -> navController.navigate(Screen.SmsReceiver.route)
                         "screen-monitor" -> navController.navigate(Screen.ScreenStateMonitor.route)
+                        "contacts-app" -> navController.navigate(Screen.ContactsApp.route)
+                        "file-download-app" -> navController.navigate(Screen.FileDownloadApp.route)
                     }
                 }
             )
@@ -379,6 +385,18 @@ fun AppNavigation(
         
         composable(Screen.ScreenStateMonitor.route) {
             ScreenStateMonitorScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ContactsApp.route) {
+            ContactsAppScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.FileDownloadApp.route) {
+            FileDownloadAppScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
