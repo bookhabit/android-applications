@@ -145,6 +145,13 @@ fun NativeScreen(
             route = "screen-monitor"
         ),
         AppItem(
+            id = "motivation",
+            title = "동기부여 앱",
+            description = "화면 ON 시 동기부여 콘텐츠 표시 및 목표 관리",
+            icon = Icons.Default.Favorite,
+            route = "motivation"
+        ),
+        AppItem(
             id = "contacts-app",
             title = "연락처 앱",
             description = "Content Provider를 이용한 연락처 읽기/쓰기",

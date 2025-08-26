@@ -38,6 +38,7 @@ import com.example.android_applicatoins.screens.native.NetworkMonitorScreen
 import com.example.android_applicatoins.screens.native.BootReceiverScreen
 import com.example.android_applicatoins.screens.native.SmsReceiverScreen
 import com.example.android_applicatoins.screens.native.ScreenStateMonitorScreen
+import com.example.android_applicatoins.screens.native.MotivationScreen
 import com.example.android_applicatoins.screens.native.ContactsAppScreen
 import com.example.android_applicatoins.screens.native.FileDownloadAppScreen
 import com.example.android_applicatoins.screens.native.IntentTestScreen
@@ -78,6 +79,7 @@ sealed class Screen(val route: String) {
     object BootReceiver : Screen("boot-receiver")
     object SmsReceiver : Screen("sms-receiver")
     object ScreenStateMonitor : Screen("screen-monitor")
+    object Motivation : Screen("motivation")
     object ContactsApp : Screen("contacts-app")
     object FileDownloadApp : Screen("file-download-app")
     object IntentTest : Screen("intent-test")
@@ -174,6 +176,7 @@ fun AppNavigation(
                         "boot-receiver" -> navController.navigate(Screen.BootReceiver.route)
                         "sms-receiver" -> navController.navigate(Screen.SmsReceiver.route)
                         "screen-monitor" -> navController.navigate(Screen.ScreenStateMonitor.route)
+                        "motivation" -> navController.navigate(Screen.Motivation.route)
                         "contacts-app" -> navController.navigate(Screen.ContactsApp.route)
                         "file-download-app" -> navController.navigate(Screen.FileDownloadApp.route)
                         "intent-test" -> navController.navigate(Screen.IntentTest.route)
@@ -385,6 +388,12 @@ fun AppNavigation(
         
         composable(Screen.ScreenStateMonitor.route) {
             ScreenStateMonitorScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Motivation.route) {
+            MotivationScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
