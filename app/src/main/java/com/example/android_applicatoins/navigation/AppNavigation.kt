@@ -37,6 +37,11 @@ import com.example.android_applicatoins.screens.basic.listView.ComposeLazyDemoSc
 import com.example.android_applicatoins.screens.game.GameScreen
 import com.example.android_applicatoins.screens.native.NativeScreen
 import com.example.android_applicatoins.screens.native.MusicPlayerScreen
+import com.example.android_applicatoins.screens.native.BatteryMonitorScreen
+import com.example.android_applicatoins.screens.native.NetworkMonitorScreen
+import com.example.android_applicatoins.screens.native.BootReceiverScreen
+import com.example.android_applicatoins.screens.native.SmsReceiverScreen
+import com.example.android_applicatoins.screens.native.ScreenStateMonitorScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -70,6 +75,11 @@ sealed class Screen(val route: String) {
     
     // 네이티브 앱 화면들
     object MusicPlayer : Screen("music-player")
+    object BatteryMonitor : Screen("battery-monitor")
+    object NetworkMonitor : Screen("network-monitor")
+    object BootReceiver : Screen("boot-receiver")
+    object SmsReceiver : Screen("sms-receiver")
+    object ScreenStateMonitor : Screen("screen-monitor")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -159,6 +169,11 @@ fun AppNavigation(
                 onAppSelected = { appId ->
                     when (appId) {
                         "music-player" -> navController.navigate(Screen.MusicPlayer.route)
+                        "battery-monitor" -> navController.navigate(Screen.BatteryMonitor.route)
+                        "network-monitor" -> navController.navigate(Screen.NetworkMonitor.route)
+                        "boot-receiver" -> navController.navigate(Screen.BootReceiver.route)
+                        "sms-receiver" -> navController.navigate(Screen.SmsReceiver.route)
+                        "screen-monitor" -> navController.navigate(Screen.ScreenStateMonitor.route)
                     }
                 }
             )
@@ -334,6 +349,36 @@ fun AppNavigation(
         
         composable(Screen.MusicPlayer.route) {
             MusicPlayerScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.BatteryMonitor.route) {
+            BatteryMonitorScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.NetworkMonitor.route) {
+            NetworkMonitorScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.BootReceiver.route) {
+            BootReceiverScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.SmsReceiver.route) {
+            SmsReceiverScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ScreenStateMonitor.route) {
+            ScreenStateMonitorScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }

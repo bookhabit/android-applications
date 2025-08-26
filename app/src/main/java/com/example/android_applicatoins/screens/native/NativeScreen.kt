@@ -105,6 +105,41 @@ fun NativeScreen(
             description = "안드로이드 서비스를 사용한 음악 재생 앱",
             icon = Icons.Default.MusicNote,
             route = "music-player"
+        ),
+        AppItem(
+            id = "battery-monitor",
+            title = "배터리 모니터",
+            description = "배터리 상태를 실시간으로 모니터링",
+            icon = Icons.Default.BatteryFull,
+            route = "battery-monitor"
+        ),
+        AppItem(
+            id = "network-monitor",
+            title = "네트워크 모니터",
+            description = "네트워크 상태 변화를 실시간으로 감지",
+            icon = Icons.Default.Wifi,
+            route = "network-monitor"
+        ),
+        AppItem(
+            id = "boot-receiver",
+            title = "부팅 자동 실행",
+            description = "부팅 완료 후 자동으로 서비스 실행",
+            icon = Icons.Default.Power,
+            route = "boot-receiver"
+        ),
+        AppItem(
+            id = "sms-receiver",
+            title = "SMS 수신 알림",
+            description = "SMS 수신을 감지하고 알림 표시",
+            icon = Icons.Default.Message,
+            route = "sms-receiver"
+        ),
+        AppItem(
+            id = "screen-monitor",
+            title = "화면 상태 모니터",
+            description = "화면 ON/OFF 상태를 감지하고 사용 시간 추적",
+            icon = Icons.Default.Visibility,
+            route = "screen-monitor"
         )
     )
     
