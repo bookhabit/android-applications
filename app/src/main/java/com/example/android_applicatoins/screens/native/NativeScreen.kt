@@ -152,6 +152,20 @@ fun NativeScreen(
             route = "motivation"
         ),
         AppItem(
+            id = "storage",
+            title = "데이터 저장 테스트",
+            description = "SharedPreferences, 내부/외부 저장소, SQLite 테스트",
+            icon = Icons.Default.Storage,
+            route = "storage"
+        ),
+        AppItem(
+            id = "share",
+            title = "공용 저장소 & 공유",
+            description = "외부 앱과의 데이터 공유 및 갤러리 저장 테스트",
+            icon = Icons.Default.Share,
+            route = "share"
+        ),
+        AppItem(
             id = "contacts-app",
             title = "연락처 앱",
             description = "Content Provider를 이용한 연락처 읽기/쓰기",

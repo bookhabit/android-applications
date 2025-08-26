@@ -39,6 +39,8 @@ import com.example.android_applicatoins.screens.native.BootReceiverScreen
 import com.example.android_applicatoins.screens.native.SmsReceiverScreen
 import com.example.android_applicatoins.screens.native.ScreenStateMonitorScreen
 import com.example.android_applicatoins.screens.native.MotivationScreen
+import com.example.android_applicatoins.screens.native.StorageScreen
+import com.example.android_applicatoins.screens.native.ShareScreen
 import com.example.android_applicatoins.screens.native.ContactsAppScreen
 import com.example.android_applicatoins.screens.native.FileDownloadAppScreen
 import com.example.android_applicatoins.screens.native.IntentTestScreen
@@ -79,7 +81,9 @@ sealed class Screen(val route: String) {
     object BootReceiver : Screen("boot-receiver")
     object SmsReceiver : Screen("sms-receiver")
     object ScreenStateMonitor : Screen("screen-monitor")
-    object Motivation : Screen("motivation")
+            object Motivation : Screen("motivation")
+        object Storage : Screen("storage")
+        object Share : Screen("share")
     object ContactsApp : Screen("contacts-app")
     object FileDownloadApp : Screen("file-download-app")
     object IntentTest : Screen("intent-test")
@@ -177,6 +181,8 @@ fun AppNavigation(
                         "sms-receiver" -> navController.navigate(Screen.SmsReceiver.route)
                         "screen-monitor" -> navController.navigate(Screen.ScreenStateMonitor.route)
                         "motivation" -> navController.navigate(Screen.Motivation.route)
+                "storage" -> navController.navigate(Screen.Storage.route)
+                "share" -> navController.navigate(Screen.Share.route)
                         "contacts-app" -> navController.navigate(Screen.ContactsApp.route)
                         "file-download-app" -> navController.navigate(Screen.FileDownloadApp.route)
                         "intent-test" -> navController.navigate(Screen.IntentTest.route)
@@ -394,6 +400,18 @@ fun AppNavigation(
 
         composable(Screen.Motivation.route) {
             MotivationScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Storage.route) {
+            StorageScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Share.route) {
+            ShareScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }

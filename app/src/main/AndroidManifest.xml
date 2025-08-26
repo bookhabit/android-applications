@@ -78,14 +78,25 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
         
-        <!-- BootReceiver는 현재 UI 화면으로만 사용되므로 제거 -->
-        <!-- <receiver
-            android:name=".receivers.BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver> -->
-    </application>
+                 <!-- BootReceiver는 현재 UI 화면으로만 사용되므로 제거 -->
+         <!-- <receiver
+             android:name=".receivers.BootReceiver"
+             android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+             </intent-filter>
+         </receiver> -->
+         
+         <!-- FileProvider for sharing files -->
+         <provider
+             android:name="androidx.core.content.FileProvider"
+             android:authorities="${applicationId}.fileprovider"
+             android:exported="false"
+             android:grantUriPermissions="true">
+             <meta-data
+                 android:name="android.support.FILE_PROVIDER_PATHS"
+                 android:resource="@xml/file_paths" />
+         </provider>
+     </application>
 
 </manifest>
