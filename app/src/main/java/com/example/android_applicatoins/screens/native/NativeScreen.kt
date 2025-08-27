@@ -220,6 +220,13 @@ fun NativeScreen(
             description = "안드로이드 WebView 사용법과 테스트",
             icon = Icons.Default.Language,
             route = "webview"
+        ),
+        AppItem(
+            id = "multimedia",
+            title = "멀티미디어 테스트",
+            description = "MediaPlayer, MediaRecorder, 카메라, 비디오 등 멀티미디어 기능 테스트",
+            icon = Icons.Default.MusicNote,
+            route = "multimedia"
         )
     )
     

@@ -49,6 +49,7 @@ import com.example.android_applicatoins.screens.native.LifecycleTestScreen
 import com.example.android_applicatoins.screens.native.PermissionTestScreen
 import com.example.android_applicatoins.screens.native.NetworkScreen
 import com.example.android_applicatoins.screens.native.WebViewScreen
+import com.example.android_applicatoins.screens.native.MultimediaScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -94,6 +95,7 @@ sealed class Screen(val route: String) {
     object PermissionTest : Screen("permission-test")
     object Network : Screen("network")
     object WebView : Screen("webview")
+    object Multimedia : Screen("multimedia")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -195,6 +197,7 @@ fun AppNavigation(
                         "permission-test" -> navController.navigate(Screen.PermissionTest.route)
                         "network" -> navController.navigate(Screen.Network.route)
                         "webview" -> navController.navigate(Screen.WebView.route)
+                        "multimedia" -> navController.navigate(Screen.Multimedia.route)
                     }
                 }
             )
@@ -323,6 +326,12 @@ fun AppNavigation(
         
         composable(Screen.WebView.route) {
             WebViewScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Multimedia.route) {
+            MultimediaScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
