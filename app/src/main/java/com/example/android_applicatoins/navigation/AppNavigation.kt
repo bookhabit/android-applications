@@ -50,6 +50,7 @@ import com.example.android_applicatoins.screens.native.PermissionTestScreen
 import com.example.android_applicatoins.screens.native.NetworkScreen
 import com.example.android_applicatoins.screens.native.WebViewScreen
 import com.example.android_applicatoins.screens.native.MultimediaScreen
+import com.example.android_applicatoins.screens.native.ScreenRecordingScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -96,6 +97,7 @@ sealed class Screen(val route: String) {
     object Network : Screen("network")
     object WebView : Screen("webview")
     object Multimedia : Screen("multimedia")
+    object ScreenRecording : Screen("screen-recording")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -198,6 +200,7 @@ fun AppNavigation(
                         "network" -> navController.navigate(Screen.Network.route)
                         "webview" -> navController.navigate(Screen.WebView.route)
                         "multimedia" -> navController.navigate(Screen.Multimedia.route)
+                        "screen-recording" -> navController.navigate(Screen.ScreenRecording.route)
                     }
                 }
             )
@@ -451,6 +454,12 @@ fun AppNavigation(
 
         composable(Screen.FileDownloadApp.route) {
             FileDownloadAppScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.ScreenRecording.route) {
+            ScreenRecordingScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }

@@ -227,6 +227,13 @@ fun NativeScreen(
             description = "MediaPlayer, MediaRecorder, 카메라, 비디오 등 멀티미디어 기능 테스트",
             icon = Icons.Default.MusicNote,
             route = "multimedia"
+        ),
+        AppItem(
+            id = "screen-recording",
+            title = "화면 녹화",
+            description = "MediaProjection API를 사용한 화면 녹화 및 갤러리 저장",
+            icon = Icons.Default.ScreenShare,
+            route = "screen-recording"
         )
     )
     
