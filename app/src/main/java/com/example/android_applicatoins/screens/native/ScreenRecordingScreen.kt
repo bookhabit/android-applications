@@ -108,10 +108,25 @@ fun ScreenRecordingScreen(
     // 비디오를 갤러리에 저장
     fun saveVideoToGallery(videoFile: File) {
         try {
+            // 파일 존재 여부 및 크기 확인
+            if (!videoFile.exists()) {
+                android.util.Log.e("ScreenRecording", "오류: 녹화 파일이 존재하지 않습니다")
+                return
+            }
+            
+            val fileSize = videoFile.length()
+            android.util.Log.d("ScreenRecording", "녹화 파일 정보: ${videoFile.absolutePath}, 크기: ${fileSize} bytes")
+            
+            // 파일 크기가 너무 작으면 문제가 있을 수 있음
+            if (fileSize < 1024) {
+                android.util.Log.w("ScreenRecording", "경고: 녹화 파일이 너무 작습니다 (${fileSize} bytes)")
+            }
+            
             val contentValues = android.content.ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, videoFile.name)
                 put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
+                put(MediaStore.MediaColumns.SIZE, fileSize)
             }
 
             val resolver = context.contentResolver
@@ -123,8 +138,10 @@ fun ScreenRecordingScreen(
                         inputStream.copyTo(outputStream)
                     }
                 }
+                android.util.Log.d("ScreenRecording", "갤러리 저장 완료: $videoUri")
             }
         } catch (e: Exception) {
+            android.util.Log.e("ScreenRecording", "갤러리 저장 실패", e)
             e.printStackTrace()
         }
     }
@@ -602,22 +619,37 @@ fun ScreenRecordingScreen(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    Text(
-                                        text = "파일명: ${file.name}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                                                               Text(
+                                               text = "파일명: ${file.name}",
+                                               style = MaterialTheme.typography.bodyMedium
+                                           )
 
-                                    Text(
-                                        text = "파일 크기: ${(file.length() / 1024 / 1024)} MB",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                           Text(
+                                               text = "파일 경로: ${file.absolutePath}",
+                                               style = MaterialTheme.typography.bodySmall,
+                                               color = MaterialTheme.colorScheme.onSurfaceVariant
+                                           )
 
-                                    Text(
-                                        text = "갤러리(Movies 폴더)에 저장됨",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.Green
-                                    )
+                                           Text(
+                                               text = "파일 크기: ${(file.length() / 1024 / 1024)} MB (${file.length()} bytes)",
+                                               style = MaterialTheme.typography.bodySmall,
+                                               color = MaterialTheme.colorScheme.onSurfaceVariant
+                                           )
+
+                                           Text(
+                                               text = "갤러리(Movies 폴더)에 저장됨",
+                                               style = MaterialTheme.typography.bodySmall,
+                                               color = Color.Green
+                                           )
+                                           
+                                           // 파일 상태 확인
+                                           if (file.length() < 1024) {
+                                               Text(
+                                                   text = "⚠️ 경고: 파일이 너무 작습니다. 녹화에 문제가 있을 수 있습니다.",
+                                                   style = MaterialTheme.typography.bodySmall,
+                                                   color = Color.Red
+                                               )
+                                           }
                                 }
                             }
                         }

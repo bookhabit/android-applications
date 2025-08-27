@@ -135,71 +135,112 @@ class ScreenRecordingService : Service() {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             outputFile = File(getExternalFilesDir(null), "screen_record_$timestamp.mp4")
             
-            // MediaRecorder 설정
+            Log.d("ScreenRecordingService", "녹화 파일 경로: ${outputFile?.absolutePath}")
+            
+            // MediaRecorder 설정 - 더 안정적인 설정
             mediaRecorder = MediaRecorder().apply {
-                setVideoSource(MediaRecorder.VideoSource.SURFACE)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-                setVideoEncodingBitRate(bitRate)
-                setVideoFrameRate(frameRate)
-                
-                // 화질 설정에 따른 해상도 설정
-                when (videoQuality) {
-                    "HD (720p)" -> setVideoSize(1280, 720)
-                    "Full HD (1080p)" -> setVideoSize(1920, 1080)
-                    "4K (2160p)" -> setVideoSize(3840, 2160)
-                    else -> setVideoSize(1280, 720)
+                try {
+                    // 비디오 소스 설정
+                    setVideoSource(MediaRecorder.VideoSource.SURFACE)
+                    
+                    // 출력 포맷 설정 (MPEG_4 대신 MPEG_4 사용)
+                    setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                    
+                    // 비디오 인코더 설정 (H.264 대신 기본값 사용)
+                    setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT)
+                    
+                    // 비디오 인코딩 비트레이트 설정
+                    setVideoEncodingBitRate(bitRate)
+                    
+                    // 비디오 프레임 레이트 설정
+                    setVideoFrameRate(frameRate)
+                    
+                    // 화질 설정에 따른 해상도 설정 (더 안전한 값 사용)
+                    val (width, height) = when (videoQuality) {
+                        "HD (720p)" -> Pair(1280, 720)
+                        "Full HD (1080p)" -> Pair(1920, 1080)
+                        "4K (2160p)" -> Pair(1920, 1080) // 4K는 너무 무거우므로 1080p로 제한
+                        else -> Pair(1280, 720)
+                    }
+                    
+                    setVideoSize(width, height)
+                    
+                    // 출력 파일 설정
+                    setOutputFile(outputFile?.absolutePath)
+                    
+                    // 녹화 시간 제한 설정 (5분)
+                    setMaxDuration(300000) // 5분
+                    
+                    // 파일 크기 제한 설정 (100MB)
+                    setMaxFileSize(100 * 1024 * 1024)
+                    
+                    // 준비
+                    prepare()
+                    
+                    Log.d("ScreenRecordingService", "MediaRecorder 준비 완료")
+                    
+                } catch (e: Exception) {
+                    Log.e("ScreenRecordingService", "MediaRecorder 설정 실패", e)
+                    throw e
                 }
-                
-                setOutputFile(outputFile?.absolutePath)
-                prepare()
             }
             
             // MediaProjection 생성
             val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
+            val projection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
             
-            // VirtualDisplay 생성
-            virtualDisplay = mediaProjection?.createVirtualDisplay(
+            if (projection == null) {
+                throw Exception("MediaProjection 생성 실패")
+            }
+            
+            mediaProjection = projection
+            
+            // VirtualDisplay 생성 - 더 안전한 설정
+            val (width, height) = when (videoQuality) {
+                "HD (720p)" -> Pair(1280, 720)
+                "Full HD (1080p)" -> Pair(1920, 1080)
+                "4K (2160p)" -> Pair(1920, 1080)
+                else -> Pair(1280, 720)
+            }
+            
+            virtualDisplay = projection.createVirtualDisplay(
                 "ScreenRecording",
-                when (videoQuality) {
-                    "HD (720p)" -> 1280
-                    "Full HD (1080p)" -> 1920
-                    "4K (2160p)" -> 3840
-                    else -> 1280
-                },
-                when (videoQuality) {
-                    "HD (720p)" -> 720
-                    "Full HD (1080p)" -> 1080
-                    "4K (2160p)" -> 2160
-                    else -> 720
-                },
-                1,
+                width, height, 1,
                 android.hardware.display.DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 mediaRecorder?.surface, null, null
             )
+            
+            if (virtualDisplay == null) {
+                throw Exception("VirtualDisplay 생성 실패")
+            }
             
             // 녹화 시작
             mediaRecorder?.start()
             isRecording = true
             
-            Log.d("ScreenRecordingService", "화면 녹화 시작됨")
+            Log.d("ScreenRecordingService", "화면 녹화 시작됨 - 해상도: ${width}x${height}, 비트레이트: $bitRate, FPS: $frameRate")
             
         } catch (e: Exception) {
             Log.e("ScreenRecordingService", "녹화 시작 실패", e)
+            // 실패 시 정리
+            stopRecording()
             stopSelf()
         }
     }
     
     private fun stopRecording() {
         try {
+            Log.d("ScreenRecordingService", "녹화 중지 시작")
+            
             isRecording = false
             
             // MediaRecorder 정지 및 해제
             mediaRecorder?.let { recorder ->
                 try {
+                    Log.d("ScreenRecordingService", "MediaRecorder 정지 중...")
                     recorder.stop()
                     recorder.release()
+                    Log.d("ScreenRecordingService", "MediaRecorder 정지 완료")
                 } catch (e: Exception) {
                     Log.e("ScreenRecordingService", "MediaRecorder 정지 실패", e)
                 }
@@ -208,7 +249,9 @@ class ScreenRecordingService : Service() {
             // VirtualDisplay 해제
             virtualDisplay?.let { display ->
                 try {
+                    Log.d("ScreenRecordingService", "VirtualDisplay 해제 중...")
                     display.release()
+                    Log.d("ScreenRecordingService", "VirtualDisplay 해제 완료")
                 } catch (e: Exception) {
                     Log.e("ScreenRecordingService", "VirtualDisplay 해제 실패", e)
                 }
@@ -217,7 +260,9 @@ class ScreenRecordingService : Service() {
             // MediaProjection 해제
             mediaProjection?.let { projection ->
                 try {
+                    Log.d("ScreenRecordingService", "MediaProjection 정지 중...")
                     projection.stop()
+                    Log.d("ScreenRecordingService", "MediaProjection 정지 완료")
                 } catch (e: Exception) {
                     Log.e("ScreenRecordingService", "MediaProjection 정지 실패", e)
                 }
@@ -228,7 +273,22 @@ class ScreenRecordingService : Service() {
             virtualDisplay = null
             mediaProjection = null
             
-            Log.d("ScreenRecordingService", "화면 녹화 중지됨")
+            // 파일 정보 로깅
+            outputFile?.let { file ->
+                if (file.exists()) {
+                    val fileSize = file.length()
+                    Log.d("ScreenRecordingService", "녹화 파일 생성됨: ${file.absolutePath}, 크기: ${fileSize} bytes")
+                    
+                    // 파일 크기가 너무 작으면 문제가 있을 수 있음
+                    if (fileSize < 1024) {
+                        Log.w("ScreenRecordingService", "경고: 녹화 파일이 너무 작습니다 (${fileSize} bytes)")
+                    }
+                } else {
+                    Log.e("ScreenRecordingService", "오류: 녹화 파일이 생성되지 않았습니다")
+                }
+            }
+            
+            Log.d("ScreenRecordingService", "화면 녹화 중지 완료")
             
         } catch (e: Exception) {
             Log.e("ScreenRecordingService", "녹화 중지 실패", e)
