@@ -415,8 +415,8 @@ fun ExternalToInternalTab(
                                 onDismiss = { showImageFullScreen = false }
                             )
                         }
-                    } else if (sharedDataType == "image") {
-                        // 이미지 로드 실패 시 안내 메시지
+                    } else if (sharedDataType == "image" && SharedDataManager.sharedImageUri != null) {
+                        // 이미지 로드 실패 시 안내 메시지 (실제로 이미지 URI가 있을 때만)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(

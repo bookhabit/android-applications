@@ -103,12 +103,11 @@ sealed class Screen(val route: String) {
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController = rememberNavController(),
-    startRoute: String = "main"
+    navController: NavHostController = rememberNavController()
 ) {
     NavHost(
         navController = navController,
-        startDestination = startRoute
+        startDestination = "main"
     ) {
         composable(Screen.Main.route) {
             MainScreen(

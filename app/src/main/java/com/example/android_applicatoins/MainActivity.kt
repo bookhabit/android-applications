@@ -11,6 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.example.android_applicatoins.navigation.AppNavigation
 import com.example.android_applicatoins.ui.theme.AndroidapplicatoinsTheme
 import com.example.android_applicatoins.utils.SharedDataManager
@@ -29,16 +31,16 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             AndroidapplicatoinsTheme {
-                var startRoute by remember { mutableStateOf("main") }
+                val navController = rememberNavController()
                 
-                // 공유 인텐트가 있으면 ShareScreen으로 시작
+                // 공유 인텐트가 있으면 ShareScreen으로 이동
                 LaunchedEffect(Unit) {
                     if (intent?.action == Intent.ACTION_SEND) {
-                        startRoute = "share"
+                        navController.navigate("share")
                     }
                 }
                 
-                AppNavigation(startRoute = startRoute)
+                AppNavigation(navController = navController)
             }
         }
     }
