@@ -1,17 +1,15 @@
 package com.example.android_applicatoins.screens.native
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
-import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,109 +23,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
+import com.example.android_applicatoins.utils.SharedDataManager
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
-
-// 저장 유틸 함수들
-fun saveTextToDownloads(context: Context, text: String, onResult: (Boolean, String) -> Unit) {
-    try {
-        val filename = "shared_text_${System.currentTimeMillis()}.txt"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Downloads.DISPLAY_NAME, filename)
-            put(MediaStore.Downloads.MIME_TYPE, "text/plain")
-            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-        }
-
-        val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-        uri?.let {
-            context.contentResolver.openOutputStream(it)?.use { stream ->
-                stream.write(text.toByteArray())
-                onResult(true, "텍스트가 다운로드 폴더에 저장됨 ✅")
-                return
-            }
-        }
-        onResult(false, "텍스트 저장 실패")
-    } catch (e: Exception) {
-        onResult(false, "저장 실패: ${e.message}")
-    }
-}
-
-fun saveImageToGallery(context: Context, bitmap: Bitmap, onResult: (Boolean, String) -> Unit) {
-    try {
-        val filename = "shared_image_${System.currentTimeMillis()}.jpg"
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-        }
-
-        val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-        uri?.let {
-            context.contentResolver.openOutputStream(it)?.use { stream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
-                onResult(true, "이미지가 갤러리에 저장됨 ✅")
-                return
-            }
-        }
-        onResult(false, "이미지 저장 실패")
-    } catch (e: Exception) {
-        onResult(false, "저장 실패: ${e.message}")
-    }
-}
-
-// 권한 체크 함수
-fun checkStoragePermission(context: Context): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        // Android 13 이상: READ_MEDIA_IMAGES 권한 체크
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.READ_MEDIA_IMAGES
-        ) == PackageManager.PERMISSION_GRANTED
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        // Android 10 이상: Scoped Storage로 권한 불필요
-        true
-    } else {
-        // Android 9 이하: WRITE_EXTERNAL_STORAGE 권한 체크
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-}
-
-// 권한 요청 함수
-fun requestStoragePermission(activity: android.app.Activity) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        // Android 13 이상: READ_MEDIA_IMAGES 권한 요청
-        ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES),
-            1001
-        )
-    } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-        // Android 9 이하: WRITE_EXTERNAL_STORAGE 권한 요청
-        ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-            1002
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,41 +43,66 @@ fun ShareScreen(
     val context = LocalContext.current
     var currentTab by remember { mutableStateOf(0) }
     
-    // 외부에서 받은 데이터 상태
-    var receivedText by remember { mutableStateOf("") }
-    var receivedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var receivedImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    // 공유된 데이터 상태
+    var sharedText by remember { mutableStateOf(SharedDataManager.sharedText) }
+    var sharedImageUri by remember { mutableStateOf(SharedDataManager.sharedImageUri) }
+    var sharedFileUri by remember { mutableStateOf(SharedDataManager.sharedFileUri) }
+    var sharedDataType by remember { mutableStateOf(SharedDataManager.sharedDataType) }
     
-    // 공유할 데이터 상태
+    // 저장 상태
+    var isSaving by remember { mutableStateOf(false) }
+    var saveMessage by remember { mutableStateOf("") }
+    
+    // 이미지 비트맵
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    
+    // 파일 정보
+    var fileName by remember { mutableStateOf("") }
+    var fileSize by remember { mutableStateOf("") }
+    
+    // 내부→외부 공유 상태
     var shareText by remember { mutableStateOf("") }
     var shareResult by remember { mutableStateOf("") }
     
-    // 외부 앱에서 데이터 받기
-    val textReceiver = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            try {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val text = inputStream?.bufferedReader().use { reader -> reader?.readText() } ?: ""
-                receivedText = text
-            } catch (e: Exception) {
-                receivedText = "텍스트 읽기 실패: ${e.message}"
+    // 공유된 데이터가 있으면 로드
+    LaunchedEffect(Unit) {
+        if (SharedDataManager.hasSharedData()) {
+            sharedText = SharedDataManager.sharedText
+            sharedImageUri = SharedDataManager.sharedImageUri
+            sharedFileUri = SharedDataManager.sharedFileUri
+            sharedDataType = SharedDataManager.sharedDataType
+            
+            // 이미지인 경우 비트맵 로드
+            if (sharedImageUri != null) {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(sharedImageUri!!)
+                    imageBitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream?.close()
+                } catch (e: Exception) {
+                    Log.e("ShareScreen", "이미지 로드 실패", e)
+                }
             }
-        }
-    }
-    
-    val imageReceiver = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            receivedImageUri = it
-            try {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                receivedImageBitmap = bitmap
-            } catch (e: Exception) {
-                // 이미지 로딩 실패 처리
+            
+            // 파일인 경우 정보 로드
+            if (sharedFileUri != null) {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(sharedFileUri!!)
+                    val bytes = inputStream?.readBytes()
+                    inputStream?.close()
+                    
+                    if (bytes != null) {
+                        fileSize = "${bytes.size / 1024} KB"
+                        
+                        // 파일명 추출
+                        val uriString = sharedFileUri.toString()
+                        fileName = uriString.substringAfterLast("/").substringBefore("?")
+                        if (fileName.isEmpty()) {
+                            fileName = "shared_file_${System.currentTimeMillis()}"
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("ShareScreen", "파일 정보 로드 실패", e)
+                }
             }
         }
     }
@@ -179,22 +110,20 @@ fun ShareScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("공용 저장소 & 공유 테스트", fontWeight = FontWeight.Bold) },
+                title = { Text("공유 및 저장소") },
                 navigationIcon = {
                     IconButton(onClick = onBackPressed) {
-                        Icon(Icons.Default.ArrowBack, "뒤로가기")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
                     }
                 }
             )
         }
-    ) { innerPadding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues)
+                .padding(16.dp)
         ) {
             // 탭 선택
             TabRow(
@@ -215,33 +144,25 @@ fun ShareScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             when (currentTab) {
                 0 -> ExternalToInternalTab(
-                    receivedText = receivedText,
-                    receivedImageBitmap = receivedImageBitmap,
-                    onReceiveText = { textReceiver.launch("text/*") },
-                    onReceiveImage = { imageReceiver.launch("image/*") },
-                    onSaveToGallery = {
-                        receivedImageBitmap?.let { bitmap ->
-                            try {
-                                val filename = "shared_image_${System.currentTimeMillis()}.jpg"
-                                val contentValues = ContentValues().apply {
-                                    put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-                                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-                                }
-                                
-                                val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                                uri?.let {
-                                    context.contentResolver.openOutputStream(it)?.use { stream ->
-                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                // 갤러리 저장 실패 처리
-                            }
+                    sharedText = sharedText,
+                    imageBitmap = imageBitmap,
+                    sharedFileUri = sharedFileUri,
+                    fileName = fileName,
+                    fileSize = fileSize,
+                    sharedDataType = sharedDataType,
+                    isSaving = isSaving,
+                    saveMessage = saveMessage,
+                    onSave = { dataType ->
+                        isSaving = true
+                        saveMessage = ""
+                        when (dataType) {
+                            "text" -> saveTextToFile(context, sharedText!!)
+                            "image" -> saveImageToGallery(context, sharedImageUri!!)
+                            "file" -> saveFileToDownloads(context, sharedFileUri!!, fileName)
                         }
                     }
                 )
@@ -291,254 +212,252 @@ fun ShareScreen(
     }
 }
 
+// 외부→내부 탭 (외부 앱에서 공유된 데이터 받기)
 @Composable
 fun ExternalToInternalTab(
-    receivedText: String,
-    receivedImageBitmap: Bitmap?,
-    onReceiveText: () -> Unit,
-    onReceiveImage: () -> Unit,
-    onSaveToGallery: () -> Unit
+    sharedText: String?,
+    imageBitmap: Bitmap?,
+    sharedFileUri: Uri?,
+    fileName: String,
+    fileSize: String,
+    sharedDataType: String?,
+    isSaving: Boolean,
+    saveMessage: String,
+    onSave: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    var saveResult by remember { mutableStateOf("") }
-    var showPermissionDialog by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
     
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "외부 → 내부 데이터 받기",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1976D2)
-        )
-        
-        Text(
-            text = "카톡, 외부 앱에서 공유받은 데이터를 앱에서 표시하고 공용 폴더에 저장",
-            fontSize = 14.sp,
-            color = Color.Gray,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // 텍스트 받기 + 저장
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "텍스트 받기",
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1976D2)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Button(
-                    onClick = onReceiveText,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Download, "텍스트 받기", modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("텍스트 파일 선택")
-                }
-                
-                if (receivedText.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Text(
-                            text = receivedText,
-                            modifier = Modifier.padding(16.dp),
-                            color = Color.Black,
-                            fontSize = 14.sp
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Button(
-                        onClick = {
-                            if (checkStoragePermission(context)) {
-                                saveTextToDownloads(context, receivedText) { success, msg ->
-                                    saveResult = msg
-                                }
-                            } else {
-                                showPermissionDialog = true
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Save, "텍스트 저장", modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("다운로드 폴더에 저장")
-                    }
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 이미지 받기 + 저장
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E8))
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "이미지 받기",
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF4CAF50)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Button(
-                    onClick = onReceiveImage,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Image, "이미지 받기", modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("이미지 파일 선택")
-                }
-                
-                if (receivedImageBitmap != null) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Image(
-                            bitmap = receivedImageBitmap.asImageBitmap(),
-                            contentDescription = "받은 이미지",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Button(
-                        onClick = {
-                            if (checkStoragePermission(context)) {
-                                saveImageToGallery(context, receivedImageBitmap) { success, msg ->
-                                    saveResult = msg
-                                }
-                            } else {
-                                showPermissionDialog = true
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Save, "갤러리 저장", modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("갤러리에 저장")
-                    }
-                }
-            }
-        }
-        
-        // 저장 결과 표시
-        if (saveResult.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
+        if (SharedDataManager.hasSharedData()) {
+            // 공유된 데이터 표시
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (saveResult.contains("✅")) Color(0xFFE8F5E8) else Color(0xFFFFEBEE)
-                )
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Text(
-                    text = saveResult,
+                Column(
                     modifier = Modifier.padding(16.dp),
-                    color = if (saveResult.contains("✅")) Color(0xFF2E7D32) else Color(0xFFD32F2F),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-        
-        // 권한 안내 다이얼로그
-        if (showPermissionDialog) {
-            AlertDialog(
-                onDismissRequest = { showPermissionDialog = false },
-                title = {
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     Text(
-                        "저장소 권한 필요",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
+                        text = "공유 받은 데이터",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
-                },
-                text = {
-                    Column {
-                        Text(
-                            text = "파일을 공용 폴더에 저장하려면 저장소 권한이 필요합니다.",
-                            fontSize = 14.sp
+                    
+                    // 데이터 타입 표시
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = when (sharedDataType) {
+                                "text" -> Icons.Default.TextFields
+                                "image" -> Icons.Default.Image
+                                "file" -> Icons.Default.InsertDriveFile
+                                else -> Icons.Default.Info
+                            },
+                            contentDescription = "데이터 타입",
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "권한 설정 방법:",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            text = when (sharedDataType) {
+                                "text" -> "텍스트"
+                                "image" -> "이미지"
+                                "file" -> "파일"
+                                else -> "알 수 없음"
+                            },
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            Text(
-                                text = "설정 > 앱 > 동기부여 앱 > 권한 > 사진 및 동영상",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                    }
+                    
+                    // 텍스트 데이터 표시
+                    if (!sharedText.isNullOrEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
-                        } else {
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "텍스트 내용",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = sharedText!!,
+                                    fontSize = 16.sp,
+                                    lineHeight = 24.sp
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 이미지 데이터 표시
+                    if (imageBitmap != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "이미지",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Image(
+                                    bitmap = imageBitmap.asImageBitmap(),
+                                    contentDescription = "공유된 이미지",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 파일 데이터 표시
+                    if (sharedFileUri != null && fileName.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "파일 정보",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.InsertDriveFile,
+                                        contentDescription = "파일",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Column {
+                                        Text(
+                                            text = fileName,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (fileSize.isNotEmpty()) {
+                                            Text(
+                                                text = fileSize,
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 저장 버튼
+                    Button(
+                        onClick = { onSave(sharedDataType ?: "") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isSaving
+                    ) {
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = when (sharedDataType) {
+                                "text" -> "텍스트를 파일로 저장"
+                                "image" -> "이미지를 갤러리에 저장"
+                                "file" -> "파일을 다운로드 폴더에 저장"
+                                else -> "저장"
+                            }
+                        )
+                    }
+                    
+                    // 저장 메시지 표시
+                    if (saveMessage.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (saveMessage.contains("성공")) 
+                                    Color(0xFFE8F5E8) else Color(0xFFFFEBEE)
+                            )
+                        ) {
                             Text(
-                                text = "설정 > 앱 > 동기부여 앱 > 권한 > 저장소",
-                                fontSize = 12.sp,
-                                color = Color.Gray
+                                text = saveMessage,
+                                modifier = Modifier.padding(16.dp),
+                                color = if (saveMessage.contains("성공")) 
+                                    Color(0xFF2E7D32) else Color(0xFFC62828)
                             )
                         }
                     }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showPermissionDialog = false
-                            try {
-                                val activity = context as? android.app.Activity
-                                activity?.let { requestStoragePermission(it) }
-                            } catch (e: Exception) {
-                                // 권한 요청 실패 처리
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                    ) {
-                        Text("권한 요청")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showPermissionDialog = false }
-                    ) {
-                        Text("취소")
-                    }
                 }
-            )
+            }
+        } else {
+            // 공유된 데이터가 없는 경우
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "공유",
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "공유된 데이터가 없습니다",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "다른 앱에서 '공유하기'를 통해\n텍스트, 이미지, 파일을 보내보세요",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }
 
+// 내부→외부 탭 (앱 내부 데이터를 외부로 공유)
 @Composable
 fun InternalToExternalTab(
     shareText: String,
@@ -549,28 +468,29 @@ fun InternalToExternalTab(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
             text = "내부 → 외부 데이터 공유",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFF44336)
+            color = MaterialTheme.colorScheme.primary
         )
         
         Text(
             text = "앱 내부 데이터를 외부 앱으로 공유",
             fontSize = 14.sp,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
         
         // 텍스트 공유
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -578,7 +498,7 @@ fun InternalToExternalTab(
                 Text(
                     text = "텍스트 공유",
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF44336)
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 
@@ -594,7 +514,6 @@ fun InternalToExternalTab(
                 
                 Button(
                     onClick = onShareText,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Share, "텍스트 공유", modifier = Modifier.size(20.dp))
@@ -604,12 +523,12 @@ fun InternalToExternalTab(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
         // 이미지 공유
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -617,13 +536,12 @@ fun InternalToExternalTab(
                 Text(
                     text = "이미지 공유",
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF44336)
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Button(
                     onClick = onShareImage,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Share, "이미지 공유", modifier = Modifier.size(20.dp))
@@ -633,20 +551,96 @@ fun InternalToExternalTab(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
-        
+        // 공유 결과 표시
         if (shareResult.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
                 Text(
                     text = shareResult,
                     modifier = Modifier.padding(16.dp),
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 14.sp
                 )
             }
         }
+    }
+}
+
+// 텍스트를 파일로 저장
+private fun saveTextToFile(context: Context, text: String) {
+    try {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val fileName = "shared_text_$timestamp.txt"
+        
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val file = File(downloadsDir, fileName)
+        
+        FileOutputStream(file).use { fos ->
+            fos.write(text.toByteArray())
+        }
+        
+        SharedDataManager.saveMessage = "텍스트가 다운로드 폴더에 저장되었습니다: $fileName"
+        SharedDataManager.isSaving = false
+    } catch (e: Exception) {
+        Log.e("ShareScreen", "텍스트 저장 실패", e)
+        SharedDataManager.saveMessage = "텍스트 저장에 실패했습니다: ${e.message}"
+        SharedDataManager.isSaving = false
+    }
+}
+
+// 이미지를 갤러리에 저장
+private fun saveImageToGallery(context: Context, imageUri: Uri) {
+    try {
+        val inputStream = context.contentResolver.openInputStream(imageUri)
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream?.close()
+        
+        if (bitmap != null) {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "shared_image_$timestamp.jpg"
+            
+            val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val file = File(imagesDir, fileName)
+            
+            FileOutputStream(file).use { fos ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos)
+            }
+            
+            SharedDataManager.saveMessage = "이미지가 갤러리에 저장되었습니다: $fileName"
+            SharedDataManager.isSaving = false
+        } else {
+            SharedDataManager.saveMessage = "이미지 로드에 실패했습니다"
+            SharedDataManager.isSaving = false
+        }
+    } catch (e: Exception) {
+        Log.e("ShareScreen", "이미지 저장 실패", e)
+        SharedDataManager.saveMessage = "이미지 저장에 실패했습니다: ${e.message}"
+        SharedDataManager.isSaving = false
+    }
+}
+
+// 파일을 다운로드 폴더에 저장
+private fun saveFileToDownloads(context: Context, fileUri: Uri, fileName: String) {
+    try {
+        val inputStream = context.contentResolver.openInputStream(fileUri)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val file = File(downloadsDir, fileName)
+        
+        FileOutputStream(file).use { fos ->
+            inputStream?.use { input ->
+                input.copyTo(fos)
+            }
+        }
+        
+        SharedDataManager.saveMessage = "파일이 다운로드 폴더에 저장되었습니다: $fileName"
+        SharedDataManager.isSaving = false
+    } catch (e: Exception) {
+        Log.e("ShareScreen", "파일 저장 실패", e)
+        SharedDataManager.saveMessage = "파일 저장에 실패했습니다: ${e.message}"
+        SharedDataManager.isSaving = false
     }
 }
