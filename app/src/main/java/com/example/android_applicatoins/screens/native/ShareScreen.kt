@@ -1,15 +1,20 @@
 package com.example.android_applicatoins.screens.native
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,15 +28,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.example.android_applicatoins.utils.SharedDataManager
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -66,31 +74,54 @@ fun ShareScreen(
     
     // 공유된 데이터가 있으면 로드
     LaunchedEffect(Unit) {
+        Log.d("ShareScreen", "=== LaunchedEffect 시작 ===")
+        Log.d("ShareScreen", "SharedDataManager.hasSharedData(): ${SharedDataManager.hasSharedData()}")
+        Log.d("ShareScreen", "SharedDataManager.sharedDataType: ${SharedDataManager.sharedDataType}")
+        Log.d("ShareScreen", "SharedDataManager.sharedText: ${SharedDataManager.sharedText}")
+        Log.d("ShareScreen", "SharedDataManager.sharedImageUri: ${SharedDataManager.sharedImageUri}")
+        Log.d("ShareScreen", "SharedDataManager.sharedFileUri: ${SharedDataManager.sharedFileUri}")
+        
         if (SharedDataManager.hasSharedData()) {
             sharedText = SharedDataManager.sharedText
             sharedImageUri = SharedDataManager.sharedImageUri
             sharedFileUri = SharedDataManager.sharedFileUri
             sharedDataType = SharedDataManager.sharedDataType
             
+            Log.d("ShareScreen", "로컬 상태 업데이트 완료:")
+            Log.d("ShareScreen", "  - sharedText: $sharedText")
+            Log.d("ShareScreen", "  - sharedImageUri: $sharedImageUri")
+            Log.d("ShareScreen", "  - sharedFileUri: $sharedFileUri")
+            Log.d("ShareScreen", "  - sharedDataType: $sharedDataType")
+            
             // 이미지인 경우 비트맵 로드
             if (sharedImageUri != null) {
+                Log.d("ShareScreen", "이미지 URI 감지됨: $sharedImageUri")
                 try {
                     val inputStream = context.contentResolver.openInputStream(sharedImageUri!!)
-                    imageBitmap = BitmapFactory.decodeStream(inputStream)
-                    inputStream?.close()
+                    if (inputStream != null) {
+                        imageBitmap = BitmapFactory.decodeStream(inputStream)
+                        inputStream.close()
+                        Log.d("ShareScreen", "✅ 이미지 로드 성공: ${imageBitmap?.width}x${imageBitmap?.height}")
+                    } else {
+                        Log.e("ShareScreen", "❌ 이미지 InputStream이 null")
+                    }
                 } catch (e: Exception) {
-                    Log.e("ShareScreen", "이미지 로드 실패", e)
+                    Log.e("ShareScreen", "❌ 이미지 로드 실패", e)
+                    imageBitmap = null
                 }
+            } else {
+                Log.d("ShareScreen", "이미지 URI가 null")
             }
             
             // 파일인 경우 정보 로드
             if (sharedFileUri != null) {
+                Log.d("ShareScreen", "파일 URI 감지됨: $sharedFileUri")
                 try {
                     val inputStream = context.contentResolver.openInputStream(sharedFileUri!!)
-                    val bytes = inputStream?.readBytes()
-                    inputStream?.close()
-                    
-                    if (bytes != null) {
+                    if (inputStream != null) {
+                        val bytes = inputStream.readBytes()
+                        inputStream.close()
+                        
                         fileSize = "${bytes.size / 1024} KB"
                         
                         // 파일명 추출
@@ -99,12 +130,20 @@ fun ShareScreen(
                         if (fileName.isEmpty()) {
                             fileName = "shared_file_${System.currentTimeMillis()}"
                         }
+                        Log.d("ShareScreen", "✅ 파일 정보 로드 성공: $fileName, $fileSize")
+                    } else {
+                        Log.e("ShareScreen", "❌ 파일 InputStream이 null")
                     }
                 } catch (e: Exception) {
-                    Log.e("ShareScreen", "파일 정보 로드 실패", e)
+                    Log.e("ShareScreen", "❌ 파일 정보 로드 실패", e)
                 }
+            } else {
+                Log.d("ShareScreen", "파일 URI가 null")
             }
+        } else {
+            Log.d("ShareScreen", "공유된 데이터가 없음")
         }
+        Log.d("ShareScreen", "=== LaunchedEffect 완료 ===")
     }
     
     Scaffold(
@@ -159,10 +198,17 @@ fun ShareScreen(
                     onSave = { dataType ->
                         isSaving = true
                         saveMessage = ""
+                        
+                        // 저장 완료 후 UI 상태 업데이트를 위한 콜백
+                        fun updateUIAfterSave() {
+                            isSaving = false
+                            saveMessage = SharedDataManager.saveMessage
+                        }
+                        
                         when (dataType) {
-                            "text" -> saveTextToFile(context, sharedText!!)
-                            "image" -> saveImageToGallery(context, sharedImageUri!!)
-                            "file" -> saveFileToDownloads(context, sharedFileUri!!, fileName)
+                            "text" -> saveTextToFile(context, sharedText!!, ::updateUIAfterSave)
+                            "image" -> saveImageToGallery(context, sharedImageUri!!, ::updateUIAfterSave)
+                            "file" -> saveFileToDownloads(context, sharedFileUri!!, fileName, ::updateUIAfterSave)
                         }
                     }
                 )
@@ -225,6 +271,13 @@ fun ExternalToInternalTab(
     saveMessage: String,
     onSave: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    var localImageBitmap by remember { mutableStateOf(imageBitmap) }
+    
+    // 이미지 비트맵이 변경되면 로컬 상태 업데이트
+    LaunchedEffect(imageBitmap) {
+        localImageBitmap = imageBitmap
+    }
     val scrollState = rememberScrollState()
     
     Column(
@@ -305,6 +358,8 @@ fun ExternalToInternalTab(
                     
                     // 이미지 데이터 표시
                     if (imageBitmap != null) {
+                        var showImageFullScreen by remember { mutableStateOf(false) }
+                        
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
@@ -321,6 +376,16 @@ fun ExternalToInternalTab(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
+                                
+                                // 이미지 크기 정보 표시
+                                Text(
+                                    text = "크기: ${imageBitmap.width} x ${imageBitmap.height}",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
                                 Image(
                                     bitmap = imageBitmap.asImageBitmap(),
                                     contentDescription = "공유된 이미지",
@@ -328,6 +393,50 @@ fun ExternalToInternalTab(
                                         .fillMaxWidth()
                                         .height(200.dp)
                                         .clip(RoundedCornerShape(8.dp))
+                                        .clickable { showImageFullScreen = true },
+                                    contentScale = ContentScale.Fit
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "이미지를 클릭하면 전체화면으로 볼 수 있습니다",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                        
+                        // 전체화면 이미지 뷰어
+                        if (showImageFullScreen) {
+                            ImageFullScreenViewer(
+                                bitmap = imageBitmap!!,
+                                onDismiss = { showImageFullScreen = false }
+                            )
+                        }
+                    } else if (sharedDataType == "image") {
+                        // 이미지 로드 실패 시 안내 메시지
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFFEBEE)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "이미지 로드 실패",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFFC62828)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "이미지를 미리보기할 수 없습니다. 저장 후 갤러리에서 확인해주세요.",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFC62828)
                                 )
                             }
                         }
@@ -571,29 +680,52 @@ fun InternalToExternalTab(
 }
 
 // 텍스트를 파일로 저장
-private fun saveTextToFile(context: Context, text: String) {
+private fun saveTextToFile(context: Context, text: String, onComplete: () -> Unit) {
     try {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val fileName = "shared_text_$timestamp.txt"
         
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val file = File(downloadsDir, fileName)
-        
-        FileOutputStream(file).use { fos ->
-            fos.write(text.toByteArray())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10 이상에서는 MediaStore API 사용
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            
+            val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            uri?.let {
+                context.contentResolver.openOutputStream(it)?.use { stream ->
+                    stream.write(text.toByteArray())
+                }
+                SharedDataManager.saveMessage = "텍스트가 다운로드 폴더에 저장되었습니다: $fileName"
+                Log.d("ShareScreen", "텍스트 저장 성공: $fileName")
+            } ?: run {
+                SharedDataManager.saveMessage = "텍스트 저장에 실패했습니다: MediaStore URI 생성 실패"
+                Log.e("ShareScreen", "텍스트 저장 실패: MediaStore URI 생성 실패")
+            }
+        } else {
+            // Android 9 이하에서는 기존 방식 사용
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val file = File(downloadsDir, fileName)
+            
+            FileOutputStream(file).use { fos ->
+                fos.write(text.toByteArray())
+            }
+            SharedDataManager.saveMessage = "텍스트가 다운로드 폴더에 저장되었습니다: $fileName"
+            Log.d("ShareScreen", "텍스트 저장 성공: $fileName")
         }
-        
-        SharedDataManager.saveMessage = "텍스트가 다운로드 폴더에 저장되었습니다: $fileName"
-        SharedDataManager.isSaving = false
-    } catch (e: Exception) {
-        Log.e("ShareScreen", "텍스트 저장 실패", e)
-        SharedDataManager.saveMessage = "텍스트 저장에 실패했습니다: ${e.message}"
-        SharedDataManager.isSaving = false
+            } catch (e: Exception) {
+            Log.e("ShareScreen", "텍스트 저장 실패", e)
+            SharedDataManager.saveMessage = "텍스트 저장에 실패했습니다: ${e.message}"
+        } finally {
+            SharedDataManager.isSaving = false
+            onComplete() // UI 상태 업데이트 콜백 호출
+        }
     }
-}
 
 // 이미지를 갤러리에 저장
-private fun saveImageToGallery(context: Context, imageUri: Uri) {
+private fun saveImageToGallery(context: Context, imageUri: Uri, onComplete: () -> Unit) {
     try {
         val inputStream = context.contentResolver.openInputStream(imageUri)
         val bitmap = BitmapFactory.decodeStream(inputStream)
@@ -603,44 +735,139 @@ private fun saveImageToGallery(context: Context, imageUri: Uri) {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "shared_image_$timestamp.jpg"
             
-            val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            val file = File(imagesDir, fileName)
-            
-            FileOutputStream(file).use { fos ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10 이상에서는 MediaStore API 사용
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                }
+                
+                val uri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                uri?.let {
+                    context.contentResolver.openOutputStream(it)?.use { stream ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                    }
+                    SharedDataManager.saveMessage = "이미지가 갤러리에 저장되었습니다: $fileName"
+                    Log.d("ShareScreen", "이미지 저장 성공: $fileName")
+                } ?: run {
+                    SharedDataManager.saveMessage = "이미지 저장에 실패했습니다: MediaStore URI 생성 실패"
+                    Log.e("ShareScreen", "이미지 저장 실패: MediaStore URI 생성 실패")
+                }
+            } else {
+                // Android 9 이하에서는 기존 방식 사용
+                val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                val file = File(imagesDir, fileName)
+                
+                FileOutputStream(file).use { fos ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos)
+                }
+                SharedDataManager.saveMessage = "이미지가 갤러리에 저장되었습니다: $fileName"
+                Log.d("ShareScreen", "이미지 저장 성공: $fileName")
             }
-            
-            SharedDataManager.saveMessage = "이미지가 갤러리에 저장되었습니다: $fileName"
-            SharedDataManager.isSaving = false
         } else {
             SharedDataManager.saveMessage = "이미지 로드에 실패했습니다"
-            SharedDataManager.isSaving = false
+            Log.e("ShareScreen", "이미지 저장 실패: 비트맵이 null")
         }
-    } catch (e: Exception) {
-        Log.e("ShareScreen", "이미지 저장 실패", e)
-        SharedDataManager.saveMessage = "이미지 저장에 실패했습니다: ${e.message}"
-        SharedDataManager.isSaving = false
+            } catch (e: Exception) {
+            Log.e("ShareScreen", "이미지 저장 실패", e)
+            SharedDataManager.saveMessage = "이미지 저장에 실패했습니다: ${e.message}"
+        } finally {
+            SharedDataManager.isSaving = false
+            onComplete() // UI 상태 업데이트 콜백 호출
+        }
     }
-}
 
 // 파일을 다운로드 폴더에 저장
-private fun saveFileToDownloads(context: Context, fileUri: Uri, fileName: String) {
+private fun saveFileToDownloads(context: Context, fileUri: Uri, fileName: String, onComplete: () -> Unit) {
     try {
         val inputStream = context.contentResolver.openInputStream(fileUri)
-        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val file = File(downloadsDir, fileName)
         
-        FileOutputStream(file).use { fos ->
-            inputStream?.use { input ->
-                input.copyTo(fos)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10 이상에서는 MediaStore API 사용
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "*/*")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
             }
+            
+            val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            uri?.let {
+                context.contentResolver.openOutputStream(it)?.use { stream ->
+                    inputStream?.use { input ->
+                        input.copyTo(stream)
+                    }
+                }
+                SharedDataManager.saveMessage = "파일이 다운로드 폴더에 저장되었습니다: $fileName"
+                Log.d("ShareScreen", "파일 저장 성공: $fileName")
+            } ?: run {
+                SharedDataManager.saveMessage = "파일 저장에 실패했습니다: MediaStore URI 생성 실패"
+                Log.e("ShareScreen", "파일 저장 실패: MediaStore URI 생성 실패")
+            }
+        } else {
+            // Android 9 이하에서는 기존 방식 사용
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val file = File(downloadsDir, fileName)
+            
+            FileOutputStream(file).use { fos ->
+                inputStream?.use { input ->
+                    input.copyTo(fos)
+                }
+            }
+            SharedDataManager.saveMessage = "파일이 다운로드 폴더에 저장되었습니다: $fileName"
+            Log.d("ShareScreen", "파일 저장 성공: $fileName")
+        }
+            } catch (e: Exception) {
+            Log.e("ShareScreen", "파일 저장 실패", e)
+            SharedDataManager.saveMessage = "파일 저장에 실패했습니다: ${e.message}"
+        } finally {
+            SharedDataManager.isSaving = false
+            onComplete() // UI 상태 업데이트 콜백 호출
+        }
+    }
+
+// 전체화면 이미지 뷰어
+@Composable
+fun ImageFullScreenViewer(
+    bitmap: Bitmap,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.9f))
+    ) {
+        // 이미지
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "전체화면 이미지",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit
+        )
+        
+        // 닫기 버튼
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "닫기",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
         }
         
-        SharedDataManager.saveMessage = "파일이 다운로드 폴더에 저장되었습니다: $fileName"
-        SharedDataManager.isSaving = false
-    } catch (e: Exception) {
-        Log.e("ShareScreen", "파일 저장 실패", e)
-        SharedDataManager.saveMessage = "파일 저장에 실패했습니다: ${e.message}"
-        SharedDataManager.isSaving = false
+        // 안내 텍스트
+        Text(
+            text = "화면을 탭하면 닫힙니다",
+            color = Color.White,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 }

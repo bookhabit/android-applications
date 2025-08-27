@@ -8,6 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.*
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.example.android_applicatoins.navigation.AppNavigation
 import com.example.android_applicatoins.ui.theme.AndroidapplicatoinsTheme
 import com.example.android_applicatoins.utils.SharedDataManager
@@ -26,7 +29,16 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             AndroidapplicatoinsTheme {
-                AppNavigation()
+                var startRoute by remember { mutableStateOf("main") }
+                
+                // 공유 인텐트가 있으면 ShareScreen으로 시작
+                LaunchedEffect(Unit) {
+                    if (intent?.action == Intent.ACTION_SEND) {
+                        startRoute = "share"
+                    }
+                }
+                
+                AppNavigation(startRoute = startRoute)
             }
         }
     }
@@ -40,38 +52,99 @@ class MainActivity : ComponentActivity() {
     
     private fun handleShareIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND) {
-            Log.d(TAG, "공유 인텐트 감지됨: ${intent.type}")
+            val mimeType = intent.type
+            Log.d(TAG, "=== 공유 인텐트 상세 분석 ===")
+            Log.d(TAG, "MIME 타입: $mimeType")
+            Log.d(TAG, "액션: ${intent.action}")
+            Log.d(TAG, "카테고리: ${intent.categories}")
             
-            // 공유된 데이터를 전역 변수나 SharedPreferences에 저장
-            when (intent.type) {
-                "text/plain" -> {
+            // MIME 타입별 상세 분석
+            when {
+                mimeType == "text/plain" -> {
                     val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
                     if (!sharedText.isNullOrEmpty()) {
+                        Log.d(TAG, "✅ 텍스트 분류됨")
                         Log.d(TAG, "공유된 텍스트: $sharedText")
-                        // 텍스트를 전역 변수에 저장
                         SharedDataManager.sharedText = sharedText
                         SharedDataManager.sharedDataType = "text"
+                        Log.d(TAG, "SharedDataManager 업데이트 완료: text")
+                    } else {
+                        Log.w(TAG, "⚠️ 텍스트가 비어있음")
                     }
                 }
-                "image/*" -> {
+                mimeType?.startsWith("image/") == true -> {
+                    Log.d(TAG, "✅ 이미지 분류됨 (MIME: $mimeType)")
                     val imageUri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
                     if (imageUri != null) {
                         Log.d(TAG, "공유된 이미지 URI: $imageUri")
-                        // 이미지 URI를 전역 변수에 저장
+                        Log.d(TAG, "URI 스키마: ${imageUri.scheme}")
+                        Log.d(TAG, "URI 호스트: ${imageUri.host}")
+                        Log.d(TAG, "URI 경로: ${imageUri.path}")
+                        
                         SharedDataManager.sharedImageUri = imageUri
                         SharedDataManager.sharedDataType = "image"
+                        Log.d(TAG, "SharedDataManager 업데이트 완료: image")
+                    } else {
+                        Log.e(TAG, "❌ 이미지 URI가 null")
+                    }
+                }
+                mimeType?.startsWith("video/") == true -> {
+                    Log.d(TAG, "✅ 비디오 분류됨 (MIME: $mimeType)")
+                    val videoUri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                    if (videoUri != null) {
+                        Log.d(TAG, "공유된 비디오 URI: $videoUri")
+                        SharedDataManager.sharedFileUri = videoUri
+                        SharedDataManager.sharedDataType = "file"
+                        Log.d(TAG, "SharedDataManager 업데이트 완료: video -> file")
+                    }
+                }
+                mimeType?.startsWith("audio/") == true -> {
+                    Log.d(TAG, "✅ 오디오 분류됨 (MIME: $mimeType)")
+                    val audioUri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                    if (audioUri != null) {
+                        Log.d(TAG, "공유된 오디오 URI: $audioUri")
+                        SharedDataManager.sharedFileUri = audioUri
+                        SharedDataManager.sharedDataType = "file"
+                        Log.d(TAG, "SharedDataManager 업데이트 완료: audio -> file")
+                    }
+                }
+                mimeType?.startsWith("application/") == true -> {
+                    Log.d(TAG, "✅ 애플리케이션 파일 분류됨 (MIME: $mimeType)")
+                    val fileUri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                    if (fileUri != null) {
+                        Log.d(TAG, "공유된 파일 URI: $fileUri")
+                        SharedDataManager.sharedFileUri = fileUri
+                        SharedDataManager.sharedDataType = "file"
+                        Log.d(TAG, "SharedDataManager 업데이트 완료: application -> file")
                     }
                 }
                 else -> {
+                    Log.d(TAG, "⚠️ 기타 타입 분류됨 (MIME: $mimeType)")
                     val streamUri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
                     if (streamUri != null) {
-                        Log.d(TAG, "공유된 파일 URI: $streamUri")
-                        // 파일 URI를 전역 변수에 저장
+                        Log.d(TAG, "공유된 스트림 URI: $streamUri")
+                        Log.d(TAG, "URI 스키마: ${streamUri.scheme}")
+                        Log.d(TAG, "URI 호스트: ${streamUri.host}")
+                        Log.d(TAG, "URI 경로: ${streamUri.path}")
+                        
+                        // MIME 타입이 null이거나 알 수 없는 경우 파일로 분류
                         SharedDataManager.sharedFileUri = streamUri
                         SharedDataManager.sharedDataType = "file"
+                        Log.d(TAG, "SharedDataManager 업데이트 완료: unknown -> file")
+                    } else {
+                        Log.e(TAG, "❌ 스트림 URI가 null")
                     }
                 }
             }
+            
+            // 최종 상태 로깅
+            Log.d(TAG, "=== 최종 SharedDataManager 상태 ===")
+            Log.d(TAG, "sharedDataType: ${SharedDataManager.sharedDataType}")
+            Log.d(TAG, "sharedText: ${SharedDataManager.sharedText}")
+            Log.d(TAG, "sharedImageUri: ${SharedDataManager.sharedImageUri}")
+            Log.d(TAG, "sharedFileUri: ${SharedDataManager.sharedFileUri}")
+            Log.d(TAG, "hasSharedData: ${SharedDataManager.hasSharedData()}")
+            Log.d(TAG, "=== 공유 인텐트 분석 완료 ===")
         }
     }
     
