@@ -206,6 +206,20 @@ fun NativeScreen(
             description = "안드로이드 권한 시스템을 테스트해보세요",
             icon = Icons.Default.Security,
             route = "permission-test"
+        ),
+        AppItem(
+            id = "network",
+            title = "네트워크 & 웹 테스트",
+            description = "네트워킹 상태 조회, 웹앱 개념, XML 처리 테스트",
+            icon = Icons.Default.Cloud,
+            route = "network"
+        ),
+        AppItem(
+            id = "webview",
+            title = "WebView 테스트",
+            description = "안드로이드 WebView 사용법과 테스트",
+            icon = Icons.Default.Language,
+            route = "webview"
         )
     )
     

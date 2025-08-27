@@ -47,6 +47,8 @@ import com.example.android_applicatoins.screens.native.IntentTestScreen
 import com.example.android_applicatoins.screens.native.ImplicitIntentTestScreen
 import com.example.android_applicatoins.screens.native.LifecycleTestScreen
 import com.example.android_applicatoins.screens.native.PermissionTestScreen
+import com.example.android_applicatoins.screens.native.NetworkScreen
+import com.example.android_applicatoins.screens.native.WebViewScreen
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -90,6 +92,8 @@ sealed class Screen(val route: String) {
     object ImplicitIntentTest : Screen("implicit-intent-test")
     object LifecycleTest : Screen("lifecycle-test")
     object PermissionTest : Screen("permission-test")
+    object Network : Screen("network")
+    object WebView : Screen("webview")
     
     // 리스트 뷰 관련 스크린들
     object ListView : Screen("list-view")
@@ -189,6 +193,8 @@ fun AppNavigation(
                         "implicit-intent-test" -> navController.navigate(Screen.ImplicitIntentTest.route)
                         "lifecycle-test" -> navController.navigate(Screen.LifecycleTest.route)
                         "permission-test" -> navController.navigate(Screen.PermissionTest.route)
+                        "network" -> navController.navigate(Screen.Network.route)
+                        "webview" -> navController.navigate(Screen.WebView.route)
                     }
                 }
             )
@@ -305,6 +311,18 @@ fun AppNavigation(
         
         composable(Screen.PermissionTest.route) {
             PermissionTestScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.Network.route) {
+            NetworkScreen(
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+        
+        composable(Screen.WebView.route) {
+            WebViewScreen(
                 onBackPressed = { navController.popBackStack() }
             )
         }
