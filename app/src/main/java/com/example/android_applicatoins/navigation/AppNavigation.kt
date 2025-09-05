@@ -24,6 +24,7 @@ import com.example.android_applicatoins.screens.basic.MovieInfoScreen
 import com.example.android_applicatoins.screens.basic.CalendarScreen
 import com.example.android_applicatoins.screens.basic.StepCounterScreen
 import com.example.android_applicatoins.screens.basic.GalleryScreen
+import com.example.android_applicatoins.screens.basic.SqliteScreen
 import com.example.android_applicatoins.screens.basic.listView.AdapterViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.RecyclerViewDemoScreen
 import com.example.android_applicatoins.screens.basic.listView.SpinnerDemoScreen
@@ -77,6 +78,7 @@ sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object StepCounter : Screen("step-counter")
     object Gallery : Screen("gallery")
+    object Sqlite : Screen("sqlite")
     
     // 네이티브 앱 화면들
     object MusicPlayer : Screen("music-player")
@@ -151,6 +153,7 @@ fun AppNavigation(
                         "calendar" -> navController.navigate(Screen.Calendar.route)
                         "step-counter" -> navController.navigate(Screen.StepCounter.route)
                         "gallery" -> navController.navigate(Screen.Gallery.route)
+                        "sqlite" -> navController.navigate(Screen.Sqlite.route)
                         "list-view" -> navController.navigate(Screen.ListView.route)
                     }
                 }
@@ -295,6 +298,10 @@ fun AppNavigation(
             GalleryScreen(
                 onBackPressed = { navController.popBackStack() }
             )
+        }
+        
+        composable(Screen.Sqlite.route) {
+            SqliteScreen()
         }
         
         composable(Screen.IntentTest.route) {

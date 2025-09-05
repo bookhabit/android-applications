@@ -134,6 +134,13 @@ fun BasicScreen(
             icon = Icons.Default.PhotoLibrary,
             route = "gallery"
         ),
+        AppItem(
+            id = "sqlite",
+            title = "SQLite 데이터베이스",
+            description = "SQLite를 사용한 사용자 데이터 관리 앱",
+            icon = Icons.Default.Storage,
+            route = "sqlite"
+        ),
     )
     
     Scaffold(
